@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext, createContext } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo';
@@ -7,19 +7,24 @@ import { Input, TextArea } from './components/Input';
 import { AIModal } from './components/AIModal';
 import { InstaPayModal } from './components/InstaPayModal';
 import { ResumePaper } from './components/ResumePaper';
-import { INITIAL_RESUME_STATE } from './constants';
-import { ResumeData, Experience, Education } from './types';
+import { INITIAL_RESUME_STATE, TRANSLATIONS } from './constants';
+import { ResumeData, Experience, Education, Project, Language } from './types';
+
+// -- Localization Context --
+const LanguageContext = createContext<{ lang: 'en' | 'ar'; setLang: (l: 'en' | 'ar') => void }>({ lang: 'en', setLang: () => {} });
 
 // -- Utils --
 const calculateAtsScore = (data: ResumeData): number => {
   let score = 0;
-  if (data.fullName) score += 10;
-  if (data.title) score += 10;
+  if (data.fullName) score += 5;
+  if (data.title) score += 5;
   if (data.email && data.phone) score += 10;
   if (data.summary && data.summary.length > 50) score += 15;
-  if (data.skills.length >= 5) score += 15;
+  if (data.skills.length >= 5) score += 10;
   if (data.experience.length > 0) score += 20;
-  if (data.education.length > 0) score += 20;
+  if (data.education.length > 0) score += 15;
+  if (data.projects && data.projects.length > 0) score += 10;
+  if (data.languages && data.languages.length > 0) score += 10;
   return Math.min(100, score);
 };
 
@@ -32,7 +37,7 @@ const getRank = (score: number) => {
 
 // -- Components --
 
-const TypewriterText = ({ text, delay = 0 }: { text: string, delay?: number }) => {
+const TypewriterText: React.FC<{ text: string, delay?: number }> = ({ text, delay = 0 }) => {
   const letters = Array.from(text);
   
   const container = {
@@ -73,8 +78,11 @@ const TypewriterText = ({ text, delay = 0 }: { text: string, delay?: number }) =
 
 // 1. Home Page
 const Home: React.FC = () => {
+  const { lang, setLang } = useContext(LanguageContext);
+  const t = TRANSLATIONS[lang];
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-teal-500 via-indigo-600 to-purple-900 text-white selection:bg-teal-300 selection:text-teal-900 animate-gradient-x">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-teal-500 via-indigo-600 to-purple-900 text-white selection:bg-teal-300 selection:text-teal-900 animate-gradient-x" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
       {/* Background Ambience */}
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -87,9 +95,11 @@ const Home: React.FC = () => {
            <Logo className="w-10 h-10 text-white" />
            <span className="font-bold text-xl tracking-tight hidden sm:block">Hash Resume</span>
         </div>
-        <div className="flex gap-6 text-sm font-semibold text-white/90">
-          <Link to="/about" className="hover:text-teal-300 transition">About</Link>
-          <Link to="/privacy" className="hover:text-teal-300 transition">Privacy</Link>
+        <div className="flex gap-6 text-sm font-semibold text-white/90 items-center">
+          <Link to="/about" className="hover:text-teal-300 transition">{t.nav.about}</Link>
+          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="px-3 py-1 rounded-full border border-white/20 hover:bg-white/10 transition uppercase text-xs font-bold">
+            {lang === 'en' ? 'عربي' : 'English'}
+          </button>
         </div>
       </nav>
 
@@ -107,13 +117,13 @@ const Home: React.FC = () => {
                 <Logo className="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] relative z-10" />
             </div>
             <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-white drop-shadow-lg">
-              Hash Resume
+              {t.heroTitle}
             </h1>
         </motion.div>
 
         {/* Slogan with Typewriter */}
-        <div className="h-16 md:h-8 mb-8 text-lg md:text-xl font-light text-teal-100 tracking-wide">
-            <TypewriterText text="Mobile‑First • AI‑Powered • Localized for MENA" delay={0.5} />
+        <div className="h-16 md:h-12 mb-8 text-lg md:text-xl font-light text-teal-100 tracking-wide">
+            <TypewriterText key={lang} text={t.heroSlogan} delay={0.5} />
         </div>
 
         {/* CTA Button */}
@@ -127,7 +137,7 @@ const Home: React.FC = () => {
                 to="/editor" 
                 className="group relative inline-flex items-center justify-center w-full py-4 px-8 bg-white text-indigo-900 rounded-full font-bold text-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105 active:scale-95"
             >
-                <span className="relative z-10">Start Building Now</span>
+                <span className="relative z-10">{t.startBtn}</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-teal-50 to-indigo-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </Link>
         </motion.div>
@@ -140,9 +150,9 @@ const Home: React.FC = () => {
             className="flex justify-center gap-8 border-t border-white/10 pt-8"
         >
             {[
-                { icon: "✍️", label: "Enter Data" },
-                { icon: "🤖", label: "AI Suggestions" },
-                { icon: "📄", label: "Export PDF" }
+                { icon: "✍️", label: t.steps.data },
+                { icon: "🤖", label: t.steps.ai },
+                { icon: "📄", label: t.steps.export }
             ].map((step, idx) => (
                 <div key={idx} className="flex flex-col items-center gap-3 group">
                     <span className="text-3xl filter grayscale group-hover:grayscale-0 transition-all duration-300 transform group-hover:scale-110">{step.icon}</span>
@@ -176,7 +186,10 @@ const Home: React.FC = () => {
 
 // 2. Editor Page
 const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }> = ({ data, updateData }) => {
-  const [activeTab, setActiveTab] = useState<'personal' | 'experience' | 'education' | 'skills'>('personal');
+  const { lang } = useContext(LanguageContext);
+  const t = TRANSLATIONS[lang];
+  
+  const [activeTab, setActiveTab] = useState<'personal' | 'experience' | 'education' | 'projects' | 'skills' | 'languages'>('personal');
   const [showAI, setShowAI] = useState(false);
   const [aiType, setAiType] = useState<'summary' | 'skills' | 'experience'>('summary');
   const [aiContext, setAiContext] = useState('');
@@ -185,6 +198,8 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
   // Temporary state
   const [tempExp, setTempExp] = useState<Experience>({ id: '', company: '', role: '', duration: '', description: '' });
   const [tempEdu, setTempEdu] = useState<Education>({ id: '', institution: '', degree: '', year: '' });
+  const [tempProj, setTempProj] = useState<Project>({ id: '', name: '', description: '', link: '' });
+  const [tempLang, setTempLang] = useState<Language>({ id: '', language: '', proficiency: '' });
   const [showForm, setShowForm] = useState(false);
 
   const navigate = useNavigate();
@@ -214,31 +229,47 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
 
   // --- Handlers ---
   const saveExperience = () => {
-    if (tempExp.id) {
-        updateData({...data, experience: data.experience.map(e => e.id === tempExp.id ? tempExp : e)});
-    } else {
-        updateData({...data, experience: [...data.experience, { ...tempExp, id: Date.now().toString() }]});
-    }
-    setShowForm(false);
-    setTempExp({ id: '', company: '', role: '', duration: '', description: '' });
+    if (tempExp.id) { updateData({...data, experience: data.experience.map(e => e.id === tempExp.id ? tempExp : e)}); } 
+    else { updateData({...data, experience: [...data.experience, { ...tempExp, id: Date.now().toString() }]}); }
+    setShowForm(false); setTempExp({ id: '', company: '', role: '', duration: '', description: '' });
   };
   const editExperience = (exp: Experience) => { setTempExp(exp); setEditingId(exp.id); setShowForm(true); };
   const deleteExperience = (id: string) => { updateData({...data, experience: data.experience.filter(e => e.id !== id)}); };
 
   const saveEducation = () => {
-      if (tempEdu.id) {
-          updateData({...data, education: data.education.map(e => e.id === tempEdu.id ? tempEdu : e)});
-      } else {
-          updateData({...data, education: [...data.education, { ...tempEdu, id: Date.now().toString() }]});
-      }
-      setShowForm(false);
-      setTempEdu({ id: '', institution: '', degree: '', year: '' });
+      if (tempEdu.id) { updateData({...data, education: data.education.map(e => e.id === tempEdu.id ? tempEdu : e)}); } 
+      else { updateData({...data, education: [...data.education, { ...tempEdu, id: Date.now().toString() }]}); }
+      setShowForm(false); setTempEdu({ id: '', institution: '', degree: '', year: '' });
   };
   const editEducation = (edu: Education) => { setTempEdu(edu); setEditingId(edu.id); setShowForm(true); };
   const deleteEducation = (id: string) => { updateData({...data, education: data.education.filter(e => e.id !== id)}); };
 
+  const saveProject = () => {
+    if (tempProj.id) { updateData({...data, projects: data.projects.map(p => p.id === tempProj.id ? tempProj : p)}); }
+    else { updateData({...data, projects: [...data.projects, { ...tempProj, id: Date.now().toString() }]}); }
+    setShowForm(false); setTempProj({ id: '', name: '', description: '', link: '' });
+  };
+  const editProject = (p: Project) => { setTempProj(p); setEditingId(p.id); setShowForm(true); };
+  const deleteProject = (id: string) => { updateData({...data, projects: data.projects.filter(p => p.id !== id)}); };
+
+  const saveLanguage = () => {
+    if (tempLang.id) { updateData({...data, languages: data.languages.map(l => l.id === tempLang.id ? tempLang : l)}); }
+    else { updateData({...data, languages: [...data.languages, { ...tempLang, id: Date.now().toString() }]}); }
+    setShowForm(false); setTempLang({ id: '', language: '', proficiency: '' });
+  };
+  const editLanguage = (l: Language) => { setTempLang(l); setEditingId(l.id); setShowForm(true); };
+  const deleteLanguage = (id: string) => { updateData({...data, languages: data.languages.filter(l => l.id !== id)}); };
+
+  const getListItems = () => {
+    if (activeTab === 'experience') return data.experience;
+    if (activeTab === 'education') return data.education;
+    if (activeTab === 'projects') return data.projects;
+    if (activeTab === 'languages') return data.languages;
+    return [];
+  };
+
   return (
-    <div className="min-h-screen pt-20 pb-32 px-4 md:px-6 max-w-3xl mx-auto">
+    <div className="min-h-screen pt-20 pb-32 px-4 md:px-6 max-w-3xl mx-auto" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <AIModal isOpen={showAI} onClose={() => setShowAI(false)} type={aiType} contextText={aiContext} onSelect={handleAiSelect} />
       
       {/* Top Gamification Bar */}
@@ -247,7 +278,7 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
         animate={{ y: 0, opacity: 1 }}
         className="mb-8"
       >
-        <div className={`rounded-full p-1.5 pr-6 bg-black/30 backdrop-blur-xl border border-white/10 flex items-center gap-3 shadow-lg max-w-sm mx-auto`}>
+        <div className={`rounded-full p-1.5 px-6 bg-black/30 backdrop-blur-xl border border-white/10 flex items-center gap-3 shadow-lg max-w-sm mx-auto`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl bg-gradient-to-br from-white/10 to-transparent border border-white/10 ${rank.color}`}>
                 {rank.icon}
             </div>
@@ -270,10 +301,12 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
       {/* Segmented Control Tabs (iOS Style) */}
       <div className="flex overflow-x-auto gap-2 mb-6 p-1.5 bg-black/20 backdrop-blur-lg rounded-2xl border border-white/5 scrollbar-hide">
         {[
-            { id: 'personal', label: 'Personal' },
-            { id: 'experience', label: 'Work' },
-            { id: 'education', label: 'Education' },
-            { id: 'skills', label: 'Skills' }
+            { id: 'personal', label: t.editor.personal },
+            { id: 'experience', label: t.editor.work },
+            { id: 'education', label: t.editor.education },
+            { id: 'projects', label: t.editor.projects },
+            { id: 'languages', label: t.editor.languages },
+            { id: 'skills', label: t.editor.skills }
         ].map((tab) => (
             <button
               key={tab.id}
@@ -314,7 +347,9 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
                   <div className="pt-2">
                      <div className="flex justify-between items-center mb-2 px-1">
                         <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-4">Summary</label>
-                        <button onClick={() => handleAiTrigger('summary', data.summary)} className="text-[10px] px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition text-white flex gap-1 items-center font-bold">✨ AI Rewrite</button>
+                        <button onClick={() => handleAiTrigger('summary', data.summary)} className="text-[10px] px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition text-white flex gap-1 items-center font-bold">
+                            {t.editor.enhance}
+                        </button>
                      </div>
                      <TextArea label="" value={data.summary} onChange={(e) => handleChange('summary', e.target.value)} placeholder="Briefly describe your professional background..." />
                   </div>
@@ -332,7 +367,7 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
                  <div className="bg-purple-900/20 border border-purple-500/30 p-6 rounded-[24px] text-center">
                     <h3 className="text-purple-300 font-bold mb-2">Enhance your profile</h3>
                     <p className="text-sm text-gray-400 mb-4">Let AI suggest relevant skills based on your title.</p>
-                    <button onClick={() => handleAiTrigger('skills', data.title + " " + data.summary)} className="px-6 py-2 bg-purple-600 rounded-full text-white font-bold text-sm shadow-lg hover:bg-purple-500 transition">✨ Suggest Skills</button>
+                    <button onClick={() => handleAiTrigger('skills', data.title + " " + data.summary)} className="px-6 py-2 bg-purple-600 rounded-full text-white font-bold text-sm shadow-lg hover:bg-purple-500 transition">{t.editor.aiSuggest}</button>
                  </div>
 
                  <div>
@@ -360,7 +395,7 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
               </motion.div>
             )}
 
-            {(activeTab === 'experience' || activeTab === 'education') && (
+            {['experience', 'education', 'projects', 'languages'].includes(activeTab) && (
                 <motion.div 
                     key={activeTab}
                     initial={{ opacity: 0, y: 10 }}
@@ -371,37 +406,51 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
                      {/* List View */}
                      {!showForm && (
                         <div className="space-y-4">
-                             {(activeTab === 'experience' ? data.experience : data.education).length === 0 && (
+                             {getListItems().length === 0 && (
                                  <div className="py-12 text-center border-2 border-dashed border-white/10 rounded-[24px]">
                                      <p className="text-gray-400">No items added yet.</p>
                                      <button onClick={() => { 
-                                         if(activeTab === 'experience') { setTempExp({ id: '', company: '', role: '', duration: '', description: '' }); }
-                                         else { setTempEdu({ id: '', institution: '', degree: '', year: '' }); }
+                                         if(activeTab === 'experience') setTempExp({ id: '', company: '', role: '', duration: '', description: '' });
+                                         if(activeTab === 'education') setTempEdu({ id: '', institution: '', degree: '', year: '' });
+                                         if(activeTab === 'projects') setTempProj({ id: '', name: '', description: '', link: '' });
+                                         if(activeTab === 'languages') setTempLang({ id: '', language: '', proficiency: '' });
                                          setEditingId(null); 
                                          setShowForm(true); 
-                                     }} className="mt-4 text-teal-400 font-bold hover:text-teal-300">Add First Item</button>
+                                     }} className="mt-4 text-teal-400 font-bold hover:text-teal-300">{t.editor.addFirst}</button>
                                  </div>
                              )}
-                             {(activeTab === 'experience' ? data.experience : data.education).map((item: any) => (
+                             {getListItems().map((item: any) => (
                                  <div key={item.id} className="p-5 rounded-[24px] bg-white/5 border border-white/10 flex justify-between items-center group">
                                      <div>
-                                         <h4 className="font-bold text-white text-lg">{item.role || item.degree}</h4>
-                                         <p className="text-sm text-gray-400">{item.company || item.institution}</p>
+                                         <h4 className="font-bold text-white text-lg">{item.role || item.degree || item.name || item.language}</h4>
+                                         <p className="text-sm text-gray-400">{item.company || item.institution || item.proficiency || "Link: " + item.link}</p>
                                      </div>
                                      <div className="flex gap-2">
-                                         <button onClick={() => activeTab === 'experience' ? editExperience(item) : editEducation(item)} className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-full transition">✏️</button>
-                                         <button onClick={() => activeTab === 'experience' ? deleteExperience(item.id) : deleteEducation(item.id)} className="p-2 text-red-400 hover:bg-red-400/20 rounded-full transition">🗑️</button>
+                                         <button onClick={() => {
+                                             if(activeTab === 'experience') editExperience(item);
+                                             if(activeTab === 'education') editEducation(item);
+                                             if(activeTab === 'projects') editProject(item);
+                                             if(activeTab === 'languages') editLanguage(item);
+                                         }} className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-full transition">✏️</button>
+                                         <button onClick={() => {
+                                             if(activeTab === 'experience') deleteExperience(item.id);
+                                             if(activeTab === 'education') deleteEducation(item.id);
+                                             if(activeTab === 'projects') deleteProject(item.id);
+                                             if(activeTab === 'languages') deleteLanguage(item.id);
+                                         }} className="p-2 text-red-400 hover:bg-red-400/20 rounded-full transition">🗑️</button>
                                      </div>
                                  </div>
                              ))}
-                             {(activeTab === 'experience' ? data.experience : data.education).length > 0 && (
+                             {getListItems().length > 0 && (
                                 <button onClick={() => { 
-                                    if(activeTab === 'experience') { setTempExp({ id: '', company: '', role: '', duration: '', description: '' }); }
-                                    else { setTempEdu({ id: '', institution: '', degree: '', year: '' }); }
+                                    if(activeTab === 'experience') setTempExp({ id: '', company: '', role: '', duration: '', description: '' });
+                                    if(activeTab === 'education') setTempEdu({ id: '', institution: '', degree: '', year: '' });
+                                    if(activeTab === 'projects') setTempProj({ id: '', name: '', description: '', link: '' });
+                                    if(activeTab === 'languages') setTempLang({ id: '', language: '', proficiency: '' });
                                     setEditingId(null); 
                                     setShowForm(true); 
                                 }} className="w-full py-4 rounded-full border border-dashed border-teal-500/30 text-teal-400 hover:bg-teal-500/10 font-bold transition flex items-center justify-center gap-2">
-                                    <span>+ Add Another</span>
+                                    <span>{t.editor.addAnother}</span>
                                 </button>
                              )}
                         </div>
@@ -411,11 +460,11 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
                      {showForm && (
                          <div className="space-y-5 animate-fade-in">
                              <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-xl font-bold text-white">{editingId ? 'Edit Item' : 'New Item'}</h3>
-                                <button onClick={() => setShowForm(false)} className="text-sm text-gray-400 hover:text-white">Cancel</button>
+                                <h3 className="text-xl font-bold text-white">{editingId ? t.editor.edit : t.editor.new}</h3>
+                                <button onClick={() => setShowForm(false)} className="text-sm text-gray-400 hover:text-white">{t.editor.cancel}</button>
                              </div>
                              
-                             {activeTab === 'experience' ? (
+                             {activeTab === 'experience' && (
                                  <>
                                     <Input label="Role" value={tempExp.role} onChange={e => setTempExp({...tempExp, role: e.target.value})} />
                                     <Input label="Company" value={tempExp.company} onChange={e => setTempExp({...tempExp, company: e.target.value})} />
@@ -427,14 +476,33 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
                                         </div>
                                         <TextArea label="" value={tempExp.description} onChange={e => setTempExp({...tempExp, description: e.target.value})} />
                                     </div>
-                                    <button onClick={saveExperience} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">Save Experience</button>
+                                    <button onClick={saveExperience} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">{t.editor.save}</button>
                                  </>
-                             ) : (
+                             )}
+
+                             {activeTab === 'education' && (
                                  <>
                                     <Input label="Institution" value={tempEdu.institution} onChange={e => setTempEdu({...tempEdu, institution: e.target.value})} />
                                     <Input label="Degree" value={tempEdu.degree} onChange={e => setTempEdu({...tempEdu, degree: e.target.value})} />
                                     <Input label="Year" value={tempEdu.year} onChange={e => setTempEdu({...tempEdu, year: e.target.value})} />
-                                    <button onClick={saveEducation} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">Save Education</button>
+                                    <button onClick={saveEducation} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">{t.editor.save}</button>
+                                 </>
+                             )}
+
+                             {activeTab === 'projects' && (
+                                 <>
+                                    <Input label="Project Name" value={tempProj.name} onChange={e => setTempProj({...tempProj, name: e.target.value})} />
+                                    <Input label="Link" value={tempProj.link} onChange={e => setTempProj({...tempProj, link: e.target.value})} />
+                                    <TextArea label="Description" value={tempProj.description} onChange={e => setTempProj({...tempProj, description: e.target.value})} />
+                                    <button onClick={saveProject} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">{t.editor.save}</button>
+                                 </>
+                             )}
+
+                             {activeTab === 'languages' && (
+                                 <>
+                                    <Input label="Language" value={tempLang.language} onChange={e => setTempLang({...tempLang, language: e.target.value})} />
+                                    <Input label="Proficiency" value={tempLang.proficiency} onChange={e => setTempLang({...tempLang, proficiency: e.target.value})} placeholder="e.g. Native, Fluent, Beginner" />
+                                    <button onClick={saveLanguage} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">{t.editor.save}</button>
                                  </>
                              )}
                          </div>
@@ -451,7 +519,7 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
                 onClick={() => navigate('/preview')}
                 className="flex-1 py-4 bg-gradient-to-r from-teal-500 to-indigo-600 rounded-full text-white font-bold text-lg shadow-[0_10px_30px_rgba(20,184,166,0.3)] hover:shadow-[0_15px_40px_rgba(20,184,166,0.4)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
              >
-                <span>Preview & Export</span>
+                <span>{t.editor.previewBtn}</span>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
              </button>
          </div>
@@ -473,6 +541,7 @@ const Preview: React.FC<{ data: ResumeData }> = ({ data }) => {
     if (!data.summary) { score -= 10; tips.push("Add a professional summary."); }
     if (data.skills.length < 5) { score -= 10; tips.push("Add at least 5 skills."); }
     if (data.experience.length === 0) { score -= 20; tips.push("Add work experience."); }
+    if (!data.languages || data.languages.length === 0) { score -= 5; tips.push("Add languages."); }
     return { score: Math.max(0, score), tips };
   }, [data]);
 
@@ -555,9 +624,11 @@ const Preview: React.FC<{ data: ResumeData }> = ({ data }) => {
 const AppContent: React.FC = () => {
     const [resumeData, setResumeData] = useState<ResumeData>(INITIAL_RESUME_STATE);
     const location = useLocation();
+    const { lang, setLang } = useContext(LanguageContext);
+    const t = TRANSLATIONS[lang];
 
     return (
-        <div className="bg-slate-900 text-white min-h-screen font-sans selection:bg-teal-500 selection:text-white overflow-x-hidden">
+        <div className="bg-slate-900 text-white min-h-screen font-sans selection:bg-teal-500 selection:text-white overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
             {location.pathname !== '/' && (
                 <nav className="fixed top-0 w-full z-40 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -566,9 +637,14 @@ const AppContent: React.FC = () => {
                                 <Logo className="w-8 h-8 text-teal-400" />
                                 <span className="font-bold text-lg hidden sm:block">Hash Resume</span>
                             </Link>
-                            <div className="flex gap-1 bg-white/5 p-1 rounded-full border border-white/5">
-                                <Link to="/editor" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${location.pathname === '/editor' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}>Editor</Link>
-                                <Link to="/preview" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${location.pathname === '/preview' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}>Preview</Link>
+                            <div className="flex items-center gap-3">
+                                <div className="flex gap-1 bg-white/5 p-1 rounded-full border border-white/5">
+                                    <Link to="/editor" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${location.pathname === '/editor' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}>{t.nav.editor}</Link>
+                                    <Link to="/preview" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${location.pathname === '/preview' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}>{t.nav.preview}</Link>
+                                </div>
+                                <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold">
+                                    {lang === 'en' ? 'ع' : 'En'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -578,17 +654,21 @@ const AppContent: React.FC = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/editor" element={<Editor data={resumeData} updateData={setResumeData} />} />
                 <Route path="/preview" element={<Preview data={resumeData} />} />
-                <Route path="/about" element={<div className="p-20 text-center mt-20"><h1>About</h1><Link to="/" className="text-teal-400">Home</Link></div>} />
-                <Route path="/privacy" element={<div className="p-20 text-center mt-20"><h1>Privacy</h1><Link to="/" className="text-teal-400">Home</Link></div>} />
+                <Route path="/about" element={<div className="p-20 text-center mt-20"><h1>{t.nav.about}</h1><Link to="/" className="text-teal-400">Home</Link></div>} />
+                <Route path="/privacy" element={<div className="p-20 text-center mt-20"><h1>{t.nav.privacy}</h1><Link to="/" className="text-teal-400">Home</Link></div>} />
             </Routes>
         </div>
     );
 };
 
 export default function App() {
+  const [lang, setLang] = useState<'en' | 'ar'>('en');
+
   return (
-    <HashRouter>
-      <AppContent />
-    </HashRouter>
+    <LanguageContext.Provider value={{ lang, setLang }}>
+        <HashRouter>
+          <AppContent />
+        </HashRouter>
+    </LanguageContext.Provider>
   );
 }

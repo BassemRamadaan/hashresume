@@ -42,45 +42,46 @@ export const ResumePaper: React.FC<ResumePaperProps> = ({ data, className = "", 
           </div>
       )}
 
-      {/* Skills */}
-      {data.skills.length > 0 && (
-          <div className="mb-8">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 font-sans border-b border-slate-200 pb-1">Core Competencies</h3>
-              <div className="flex flex-wrap gap-x-2 gap-y-2">
-                  {data.skills.map((skill, i) => (
-                      <span key={i} className="text-slate-800 font-medium bg-slate-100 px-3 py-1 rounded-full text-xs border border-slate-200">
-                          {skill}
-                      </span>
-                  ))}
-              </div>
-          </div>
+      {/* Experience */}
+      {(data.experience && data.experience.length > 0) && (
+        <div className="mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 font-sans border-b border-slate-200 pb-1">Experience</h3>
+            {data.experience.map((exp, i) => (
+                    <div key={i} className="mb-6 last:mb-0 relative pl-4 border-l-2 border-slate-100">
+                        <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-slate-300"></div>
+                        <div className="flex justify-between items-baseline mb-1">
+                            <h4 className="font-bold text-lg text-slate-800">{exp.role}</h4>
+                            <span className="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-sans whitespace-nowrap">{exp.duration}</span>
+                        </div>
+                        <p className="font-semibold text-teal-700 text-sm mb-2">{exp.company}</p>
+                        <p className="text-slate-700 text-sm whitespace-pre-line leading-relaxed text-justify">{exp.description}</p>
+                    </div>
+                ))
+            }
+        </div>
       )}
 
-      {/* Experience */}
-      <div className="mb-8">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 font-sans border-b border-slate-200 pb-1">Experience</h3>
-          {(data.experience && data.experience.length > 0) ? (
-              data.experience.map((exp, i) => (
-                    <div key={i} className="mb-6 last:mb-0 relative pl-4 border-l-2 border-slate-100">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-slate-300"></div>
-                      <div className="flex justify-between items-baseline mb-1">
-                          <h4 className="font-bold text-lg text-slate-800">{exp.role}</h4>
-                          <span className="text-xs font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-sans whitespace-nowrap">{exp.duration}</span>
-                      </div>
-                      <p className="font-semibold text-teal-700 text-sm mb-2">{exp.company}</p>
-                      <p className="text-slate-700 text-sm whitespace-pre-line leading-relaxed text-justify">{exp.description}</p>
-                  </div>
-              ))
-          ) : (
-              <div className="text-slate-400 italic text-sm py-4 text-center bg-slate-50 rounded">No experience listed yet.</div>
-          )}
-      </div>
+      {/* Projects */}
+      {(data.projects && data.projects.length > 0) && (
+        <div className="mb-8">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 font-sans border-b border-slate-200 pb-1">Projects</h3>
+            {data.projects.map((proj, i) => (
+                <div key={i} className="mb-4 last:mb-0">
+                    <div className="flex justify-between items-baseline mb-1">
+                        <h4 className="font-bold text-slate-800">{proj.name}</h4>
+                        {proj.link && <a href={proj.link} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">{proj.link.replace(/^https?:\/\//, '')}</a>}
+                    </div>
+                    <p className="text-slate-700 text-sm whitespace-pre-line leading-relaxed text-justify">{proj.description}</p>
+                </div>
+            ))}
+        </div>
+      )}
 
-        {/* Education */}
+      {/* Education */}
+      {(data.education && data.education.length > 0) && (
         <div className="mb-8">
           <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 font-sans border-b border-slate-200 pb-1">Education</h3>
-          {(data.education && data.education.length > 0) ? (
-              data.education.map((edu, i) => (
+          {data.education.map((edu, i) => (
                   <div key={i} className="mb-4 last:mb-0">
                       <div className="flex justify-between items-baseline">
                           <h4 className="font-bold text-slate-900">{edu.degree}</h4>
@@ -89,8 +90,38 @@ export const ResumePaper: React.FC<ResumePaperProps> = ({ data, className = "", 
                       <p className="text-sm text-teal-700 font-medium">{edu.institution}</p>
                   </div>
               ))
-          ) : (
-                <div className="text-slate-400 italic text-sm py-4 text-center bg-slate-50 rounded">No education listed yet.</div>
+          }
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-8">
+          {/* Skills */}
+          {data.skills.length > 0 && (
+              <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 font-sans border-b border-slate-200 pb-1">Skills</h3>
+                  <div className="flex flex-wrap gap-x-2 gap-y-2">
+                      {data.skills.map((skill, i) => (
+                          <span key={i} className="text-slate-800 font-medium bg-slate-100 px-3 py-1 rounded-full text-xs border border-slate-200">
+                              {skill}
+                          </span>
+                      ))}
+                  </div>
+              </div>
+          )}
+
+          {/* Languages */}
+          {(data.languages && data.languages.length > 0) && (
+              <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 font-sans border-b border-slate-200 pb-1">Languages</h3>
+                  <div className="space-y-1">
+                      {data.languages.map((lang, i) => (
+                          <div key={i} className="flex justify-between text-sm">
+                              <span className="text-slate-800 font-medium">{lang.language}</span>
+                              <span className="text-slate-500">{lang.proficiency}</span>
+                          </div>
+                      ))}
+                  </div>
+              </div>
           )}
       </div>
     </div>

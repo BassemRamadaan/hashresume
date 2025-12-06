@@ -13,6 +13,19 @@ export interface Experience {
   description: string;
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  link: string;
+}
+
+export interface Language {
+  id: string;
+  language: string;
+  proficiency: string;
+}
+
 export interface ResumeData {
   fullName: string;
   title: string;
@@ -23,6 +36,8 @@ export interface ResumeData {
   skills: string[];
   education: Education[];
   experience: Experience[];
+  projects: Project[];
+  languages: Language[];
 }
 
 export interface RubricItem {
