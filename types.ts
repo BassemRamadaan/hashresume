@@ -25,10 +25,18 @@ export interface ResumeData {
   experience: Experience[];
 }
 
-export interface AtsAnalysis {
+export interface RubricItem {
+  category: string;
   score: number;
-  missingKeywords: string[];
+  maxScore?: number;
+  status: 'good' | 'warning' | 'critical';
   tips: string[];
+}
+
+export interface AtsAnalysis {
+  overallScore: number;
+  breakdown: RubricItem[];
+  missingKeywords: string[];
 }
 
 export enum PaymentStatus {
