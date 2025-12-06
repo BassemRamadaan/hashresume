@@ -1,14 +1,28 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Initialize the client. API_KEY is assumed to be available in the environment.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Safe access to environment variable to prevent "process is not defined" error in browser
+const getApiKey = () => {
+  try {
+    if (typeof process !== "undefined" && process.env) {
+      return process.env.API_KEY || '';
+    }
+  } catch (e) {
+    // Ignore error
+  }
+  return '';
+};
+
+// Initialize the client.
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export const getAISuggestions = async (
   type: 'summary' | 'experience' | 'skills',
   currentText: string
 ): Promise<string[]> => {
-  // Graceful fallback if key is missing in dev environment
-  if (!process.env.API_KEY) {
+  const apiKey = getApiKey();
+  
+  // Graceful fallback if key is missing
+  if (!apiKey) {
     console.warn("Gemini API Key missing");
     return [
         "Results-oriented professional with a focus on efficiency and scalability.",

@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Logo } from './components/Logo';
 import { GlassCard } from './components/GlassCard';
 import { Input, TextArea } from './components/Input';
 import { AIModal } from './components/AIModal';
 import { InstaPayModal } from './components/InstaPayModal';
-import { INITIAL_RESUME_STATE, APP_SLOGANS, MOCK_ATS_KEYWORDS } from './constants';
+import { INITIAL_RESUME_STATE, MOCK_ATS_KEYWORDS } from './constants';
 import { ResumeData, AtsAnalysis, RubricItem, Experience, Education } from './types';
 import { generatePdfUrl } from './services/mockApi';
 
@@ -22,103 +23,118 @@ const calculateAtsScore = (data: ResumeData): number => {
   return Math.min(100, score);
 };
 
+const getRank = (score: number) => {
+  if (score === 100) return { label: 'Legend', icon: '🏆', color: 'text-yellow-400', bg: 'bg-gradient-to-br from-yellow-900/40 to-yellow-600/10', border: 'border-yellow-500/50', bar: 'from-yellow-400 to-orange-500' };
+  if (score >= 80) return { label: 'Expert', icon: '🥇', color: 'text-purple-400', bg: 'bg-gradient-to-br from-purple-900/40 to-purple-600/10', border: 'border-purple-500/50', bar: 'from-purple-500 to-indigo-500' };
+  if (score >= 50) return { label: 'Achiever', icon: '🥈', color: 'text-blue-400', bg: 'bg-gradient-to-br from-blue-900/40 to-blue-600/10', border: 'border-blue-500/50', bar: 'from-blue-400 to-cyan-400' };
+  return { label: 'Rookie', icon: '🥉', color: 'text-gray-400', bg: 'bg-gradient-to-br from-gray-800/40 to-gray-600/10', border: 'border-gray-500/30', bar: 'from-gray-500 to-slate-400' };
+};
+
 // -- Page Components --
 
 // 1. Home Page
 const Home: React.FC = () => {
-  const [text, setText] = useState('');
-  const [sloganIndex, setSloganIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [typingSpeed, setTypingSpeed] = useState(150);
-
-  useEffect(() => {
-    const currentSlogan = APP_SLOGANS[sloganIndex];
-    
-    const handleTyping = () => {
-      if (isDeleting) {
-        setText(currentSlogan.substring(0, text.length - 1));
-        setTypingSpeed(50);
-      } else {
-        setText(currentSlogan.substring(0, text.length + 1));
-        setTypingSpeed(150);
-      }
-
-      if (!isDeleting && text === currentSlogan) {
-        setTimeout(() => setIsDeleting(true), 2000);
-      } else if (isDeleting && text === '') {
-        setIsDeleting(false);
-        setSloganIndex((prev) => (prev + 1) % APP_SLOGANS.length);
-      }
-    };
-
-    const timer = setTimeout(handleTyping, typingSpeed);
-    return () => clearTimeout(timer);
-  }, [text, isDeleting, sloganIndex, typingSpeed]);
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative z-10 overflow-hidden">
-      {/* Background Gradients */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-900/40 rounded-full blur-[120px] animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-900/30 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-teal-500 via-indigo-600 to-purple-900 text-white selection:bg-teal-300 selection:text-teal-900 animate-gradient-x">
+      
+      {/* Animated Background Mesh */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-teal-500/20 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
 
       <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-50">
         <div className="flex items-center gap-2">
-           <Logo className="w-8 h-8 text-purple-400" />
+           <Logo className="w-8 h-8 text-teal-300" />
            <span className="font-bold text-xl tracking-tight">Hash Resume</span>
         </div>
-        <div className="flex gap-4 text-sm font-medium text-gray-300">
+        <div className="flex gap-4 text-sm font-medium text-white/80">
           <Link to="/about" className="hover:text-white transition">About</Link>
           <Link to="/privacy" className="hover:text-white transition">Privacy</Link>
         </div>
       </div>
 
-      <div className="text-center max-w-4xl space-y-8 z-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-purple-300 text-xs font-semibold uppercase tracking-wider mb-4 animate-fade-in backdrop-blur-md">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
-          </span>
-          v1.0 Now Live in Egypt
-        </div>
+      <GlassCard className="relative z-10 max-w-lg w-full text-center p-8 md:p-12 border-white/20 shadow-2xl">
         
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
-          Build your career with <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-indigo-500 animate-gradient-x">
-             Intelligent Design
-          </span>
-        </h1>
+        {/* Logo & Title */}
+        <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="flex flex-col items-center gap-4 mb-6"
+        >
+            <Logo className="w-20 h-20 text-teal-300 drop-shadow-[0_0_15px_rgba(45,212,191,0.5)]" />
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-teal-200">
+              Hash Resume
+            </h1>
+        </motion.div>
 
-        <div className="h-12 flex items-center justify-center">
-          <p className="text-2xl md:text-3xl text-gray-300 font-light">
-            {text}
-            <span className="animate-pulse text-purple-500">|</span>
-          </p>
-        </div>
+        {/* Slogan */}
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="mb-8"
+        >
+            <p className="text-lg font-light text-gray-100 tracking-wide">
+                Mobile‑First • AI‑Powered • Localized for MENA
+            </p>
+        </motion.div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-          <Link 
-            to="/editor" 
-            className="group relative px-8 py-4 bg-white text-slate-900 rounded-full font-bold text-lg overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all"
-          >
-            <span className="relative z-10 group-hover:text-purple-900 transition-colors">Create Resume</span>
-            <div className="absolute inset-0 h-full w-full bg-gradient-to-r from-purple-200 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </Link>
-          <button className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-full font-bold text-lg hover:bg-white/10 backdrop-blur-sm transition-colors">
-            Upload Existing
-          </button>
-        </div>
-      </div>
+        {/* CTA Button */}
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
+        >
+            <Link 
+                to="/editor" 
+                className="group relative inline-flex items-center justify-center w-full py-4 bg-white text-teal-800 rounded-full font-bold text-xl overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:shadow-[0_0_35px_rgba(255,255,255,0.6)] transition-all transform hover:scale-[1.02]"
+            >
+                <span className="relative z-10">ابدأ بناء سيرتك الآن</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-teal-50 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </Link>
+        </motion.div>
 
-      <div className="absolute bottom-10 flex gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 z-10">
-         <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span className="text-xs font-semibold">ATS Compliant</span>
-         </div>
-         <div className="flex items-center gap-2">
-             <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-            <span className="text-xs font-semibold">AES-256 Secure</span>
-         </div>
-      </div>
+        {/* Journey Steps */}
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+            className="grid grid-cols-3 gap-2 mt-10 border-t border-white/10 pt-8"
+        >
+            {[
+                { icon: "✍️", label: "أدخل بياناتك" },
+                { icon: "🤖", label: "اقتراحات AI" },
+                { icon: "📄", label: "تصدير PDF" }
+            ].map((step, idx) => (
+                <div key={idx} className="flex flex-col items-center gap-2">
+                    <span className="text-2xl drop-shadow-md">{step.icon}</span>
+                    <span className="text-xs font-semibold text-gray-200">{step.label}</span>
+                </div>
+            ))}
+        </motion.div>
+
+        {/* Trust Signals */}
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5, duration: 0.8 }}
+            className="mt-8 flex flex-col items-center gap-3"
+        >
+            <div className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/5 shadow-inner">
+                {/* Stylized InstaPay text acting as logo */}
+                <div className="font-bold italic flex items-center select-none">
+                    <span className="text-purple-400">Insta</span><span className="text-white">Pay</span>
+                </div>
+                <div className="h-4 w-[1px] bg-white/20 mx-2"></div>
+                <span className="text-xs text-yellow-300 font-bold tracking-wide">
+                    20 EGP <span className="line-through opacity-60 text-white font-normal ml-1">100 EGP</span>
+                </span>
+            </div>
+            <p className="text-[10px] text-teal-200/80">Limited time offer for Egypt & MENA</p>
+        </motion.div>
+      </GlassCard>
     </div>
   );
 };
@@ -138,6 +154,7 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
   const [showForm, setShowForm] = useState(false);
 
   const completionScore = calculateAtsScore(data);
+  const rank = getRank(completionScore);
 
   const handleAiTrigger = (type: 'summary' | 'skills' | 'experience', context: string) => {
     setAiType(type);
@@ -233,13 +250,40 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         {/* Sidebar Nav */}
         <div className="md:col-span-3 space-y-4">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-             <div className="flex justify-between items-end mb-2">
-                <span className="text-sm font-bold text-gray-300">Completeness</span>
-                <span className={`text-xs font-bold ${completionScore > 80 ? 'text-green-400' : 'text-yellow-400'}`}>{completionScore}%</span>
+          <div className={`rounded-2xl p-5 border ${rank.border} ${rank.bg} relative overflow-hidden transition-all duration-500 group`}>
+             <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl pointer-events-none select-none grayscale group-hover:scale-110 transition-transform">
+                {rank.icon}
              </div>
-             <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div style={{ width: `${completionScore}%` }} className={`h-full rounded-full transition-all duration-1000 ${completionScore > 80 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+             <div className="relative z-10">
+                <div className="flex justify-between items-center mb-2">
+                   <div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Current Rank</span>
+                      <h3 className={`text-lg font-black flex items-center gap-1.5 ${rank.color}`}>
+                         {rank.icon} {rank.label}
+                      </h3>
+                   </div>
+                   <div className="text-right">
+                      <span className="text-2xl font-bold text-white">{completionScore}</span>
+                      <span className="text-[10px] text-gray-300 block">/ 100</span>
+                   </div>
+                </div>
+                
+                {/* Gamified Progress Bar */}
+                <div className="h-2.5 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm border border-white/5 relative">
+                   <div 
+                      style={{ width: `${completionScore}%` }} 
+                      className={`h-full rounded-full transition-all duration-1000 bg-gradient-to-r ${rank.bar}`}
+                   >
+                       {/* Subtle shimmer animation */}
+                       <div className="absolute inset-0 bg-white/20 w-full -skew-x-12 animate-[shimmer_2s_infinite] opacity-30"></div>
+                   </div>
+                </div>
+                
+                <p className="mt-3 text-[10px] font-medium text-gray-300">
+                   {completionScore < 100 
+                       ? "Add more details to level up!" 
+                       : "Legendary status achieved!"}
+                </p>
              </div>
           </div>
 
