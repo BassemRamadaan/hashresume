@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo';
@@ -7,9 +7,8 @@ import { Input, TextArea } from './components/Input';
 import { AIModal } from './components/AIModal';
 import { InstaPayModal } from './components/InstaPayModal';
 import { ResumePaper } from './components/ResumePaper';
-import { INITIAL_RESUME_STATE, MOCK_ATS_KEYWORDS } from './constants';
-import { ResumeData, AtsAnalysis, RubricItem, Experience, Education } from './types';
-import { generatePdfUrl } from './services/mockApi';
+import { INITIAL_RESUME_STATE } from './constants';
+import { ResumeData, Experience, Education } from './types';
 
 // -- Utils --
 const calculateAtsScore = (data: ResumeData): number => {
@@ -25,10 +24,10 @@ const calculateAtsScore = (data: ResumeData): number => {
 };
 
 const getRank = (score: number) => {
-  if (score === 100) return { label: 'Legend', icon: '🏆', color: 'text-yellow-400', bg: 'bg-gradient-to-br from-yellow-900/40 to-yellow-600/10', border: 'border-yellow-500/50', bar: 'from-yellow-400 to-orange-500' };
-  if (score >= 80) return { label: 'Expert', icon: '🥇', color: 'text-purple-400', bg: 'bg-gradient-to-br from-purple-900/40 to-purple-600/10', border: 'border-purple-500/50', bar: 'from-purple-500 to-indigo-500' };
-  if (score >= 50) return { label: 'Achiever', icon: '🥈', color: 'text-blue-400', bg: 'bg-gradient-to-br from-blue-900/40 to-blue-600/10', border: 'border-blue-500/50', bar: 'from-blue-400 to-cyan-400' };
-  return { label: 'Rookie', icon: '🥉', color: 'text-gray-400', bg: 'bg-gradient-to-br from-gray-800/40 to-gray-600/10', border: 'border-gray-500/30', bar: 'from-gray-500 to-slate-400' };
+  if (score === 100) return { label: 'Legend', icon: '🏆', color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50' };
+  if (score >= 80) return { label: 'Expert', icon: '🥇', color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50' };
+  if (score >= 50) return { label: 'Achiever', icon: '🥈', color: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/50' };
+  return { label: 'Rookie', icon: '🥉', color: 'text-gray-400', bg: 'bg-gray-500/20', border: 'border-gray-500/30' };
 };
 
 // -- Components --
@@ -79,8 +78,8 @@ const Home: React.FC = () => {
       
       {/* Background Ambience */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-teal-500/30 rounded-full blur-[150px] animate-pulse"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/30 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-teal-500/30 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/30 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
       <nav className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-50">
@@ -94,7 +93,7 @@ const Home: React.FC = () => {
         </div>
       </nav>
 
-      <GlassCard className="relative z-10 max-w-lg w-full text-center p-8 md:p-14 border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+      <GlassCard className="relative z-10 max-w-lg w-full text-center p-8 md:p-14 border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl">
         
         {/* Logo & Title */}
         <motion.div
@@ -104,7 +103,7 @@ const Home: React.FC = () => {
             className="flex flex-col items-center gap-6 mb-8"
         >
             <div className="relative">
-                <div className="absolute inset-0 bg-teal-400 blur-2xl opacity-20 rounded-full"></div>
+                <div className="absolute inset-0 bg-teal-400 blur-3xl opacity-30 rounded-full"></div>
                 <Logo className="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] relative z-10" />
             </div>
             <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-white drop-shadow-lg">
@@ -126,8 +125,7 @@ const Home: React.FC = () => {
         >
             <Link 
                 to="/editor" 
-                className="group relative inline-flex items-center justify-center w-full py-4 px-8 bg-white text-indigo-900 rounded-full font-bold text-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105 active:scale-95 animate-[bounce_1s_infinite_ease-in-out_3s]"
-                style={{ animationIterationCount: 1 }}
+                className="group relative inline-flex items-center justify-center w-full py-4 px-8 bg-white text-indigo-900 rounded-full font-bold text-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105 active:scale-95"
             >
                 <span className="relative z-10">Start Building Now</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-teal-50 to-indigo-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -161,7 +159,6 @@ const Home: React.FC = () => {
             className="mt-8 flex flex-col items-center gap-3"
         >
             <div className="flex items-center gap-3 bg-black/40 px-5 py-2.5 rounded-full backdrop-blur-md border border-white/10 shadow-lg hover:bg-black/50 transition-colors">
-                {/* Stylized InstaPay */}
                 <div className="font-bold italic flex items-center select-none text-lg">
                     <span className="text-purple-400">Insta</span><span className="text-white">Pay</span>
                 </div>
@@ -179,7 +176,7 @@ const Home: React.FC = () => {
 
 // 2. Editor Page
 const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }> = ({ data, updateData }) => {
-  const [activeTab, setActiveTab] = useState<'personal' | 'experience' | 'education'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'experience' | 'education' | 'skills'>('personal');
   const [showAI, setShowAI] = useState(false);
   const [aiType, setAiType] = useState<'summary' | 'skills' | 'experience'>('summary');
   const [aiContext, setAiContext] = useState('');
@@ -215,7 +212,7 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
     updateData({ ...data, [field]: value });
   };
 
-  // --- Handlers (Experience/Education) - Simplified for brevity in this update ---
+  // --- Handlers ---
   const saveExperience = () => {
     if (tempExp.id) {
         updateData({...data, experience: data.experience.map(e => e.id === tempExp.id ? tempExp : e)});
@@ -240,193 +237,242 @@ const Editor: React.FC<{ data: ResumeData, updateData: (d: ResumeData) => void }
   const editEducation = (edu: Education) => { setTempEdu(edu); setEditingId(edu.id); setShowForm(true); };
   const deleteEducation = (id: string) => { updateData({...data, education: data.education.filter(e => e.id !== id)}); };
 
-
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-20 pb-32 px-4 md:px-6 max-w-3xl mx-auto">
       <AIModal isOpen={showAI} onClose={() => setShowAI(false)} type={aiType} contextText={aiContext} onSelect={handleAiSelect} />
       
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-           <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-200 to-indigo-200">Editor</h2>
-           <p className="text-indigo-200/60 text-sm">Build your professional profile</p>
+      {/* Top Gamification Bar */}
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="mb-8"
+      >
+        <div className={`rounded-full p-1.5 pr-6 bg-black/30 backdrop-blur-xl border border-white/10 flex items-center gap-3 shadow-lg max-w-sm mx-auto`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl bg-gradient-to-br from-white/10 to-transparent border border-white/10 ${rank.color}`}>
+                {rank.icon}
+            </div>
+            <div className="flex-1">
+                <div className="flex justify-between items-center text-xs mb-1">
+                    <span className={`font-bold uppercase tracking-wider ${rank.color}`}>{rank.label}</span>
+                    <span className="text-white font-bold">{completionScore}%</span>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${completionScore}%` }}
+                      className={`h-full rounded-full bg-gradient-to-r ${completionScore >= 80 ? 'from-purple-500 to-indigo-500' : 'from-teal-400 to-blue-500'}`}
+                    />
+                </div>
+            </div>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-             <button 
-               onClick={() => navigate('/preview')}
-               className="w-full md:w-auto px-8 py-3 rounded-full bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-400 hover:to-indigo-500 text-white font-bold transition shadow-lg hover:shadow-teal-500/30 flex items-center justify-center gap-2"
-             >
-               <span>Preview & Export</span>
-               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-             </button>
-        </div>
+      </motion.div>
+
+      {/* Segmented Control Tabs (iOS Style) */}
+      <div className="flex overflow-x-auto gap-2 mb-6 p-1.5 bg-black/20 backdrop-blur-lg rounded-2xl border border-white/5 scrollbar-hide">
+        {[
+            { id: 'personal', label: 'Personal' },
+            { id: 'experience', label: 'Work' },
+            { id: 'education', label: 'Education' },
+            { id: 'skills', label: 'Skills' }
+        ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id as any); setShowForm(false); }}
+              className={`flex-1 min-w-[90px] py-2.5 rounded-xl text-sm font-bold transition-all relative ${
+                  activeTab === tab.id ? 'text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {activeTab === tab.id && (
+                <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 border border-white/10 rounded-xl" />
+              )}
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
-        {/* Left Sidebar (Nav & Score) */}
-        <div className="lg:col-span-3 space-y-4">
-          {/* Gamified Score Card */}
-          <GlassCard className={`!p-0 overflow-hidden border ${rank.border} group`}>
-             <div className={`p-4 ${rank.bg}`}>
-                <div className="flex justify-between items-center mb-1">
-                   <h3 className={`font-black uppercase text-xs tracking-widest ${rank.color} flex items-center gap-1`}>
-                      {rank.icon} {rank.label}
-                   </h3>
-                   <span className="text-white font-bold">{completionScore}%</span>
-                </div>
-                <div className="h-2 bg-black/30 rounded-full overflow-hidden">
-                   <div style={{ width: `${completionScore}%` }} className={`h-full rounded-full bg-gradient-to-r ${rank.bar}`}></div>
-                </div>
-             </div>
-             <div className="p-3 bg-black/20 text-[10px] text-gray-400 text-center">
-                 {completionScore < 100 ? "Complete sections to rank up!" : "Max level reached!"}
-             </div>
-          </GlassCard>
-
-          {/* Nav Tabs */}
-          <div className="space-y-1">
-            {[
-                { id: 'personal', label: 'Personal Info', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-                { id: 'experience', label: 'Experience', icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-                { id: 'education', label: 'Education', icon: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z' }
-            ].map((tab) => (
-                <button
-                key={tab.id}
-                onClick={() => { setActiveTab(tab.id as any); setShowForm(false); }}
-                className={`w-full text-left px-5 py-4 rounded-xl transition-all flex items-center gap-3 font-medium ${
-                    activeTab === tab.id 
-                    ? 'bg-white/10 text-white border border-white/20 shadow-lg' 
-                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                }`}
-                >
-                <svg className={`w-5 h-5 ${activeTab === tab.id ? 'text-teal-400' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
-                </svg>
-                {tab.label}
-                </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Center Form Area */}
-        <div className="lg:col-span-9">
-          <GlassCard className="min-h-[600px] relative overflow-hidden backdrop-blur-xl border-white/10">
+      {/* Main Form Card */}
+      <GlassCard className="min-h-[500px]">
+        <AnimatePresence mode="wait">
             {activeTab === 'personal' && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 relative z-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <Input label="Full Name" value={data.fullName} onChange={(e) => handleChange('fullName', e.target.value)} placeholder="e.g. Karim Ahmed" />
-                    <Input label="Job Title" value={data.title} onChange={(e) => handleChange('title', e.target.value)} placeholder="e.g. Frontend Developer" />
-                    <Input label="Email" value={data.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="name@example.com" />
-                    <Input label="Phone" value={data.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="+20 100..." />
-                    <Input label="LinkedIn" value={data.linkedin} onChange={(e) => handleChange('linkedin', e.target.value)} placeholder="linkedin.com/in/..." className="md:col-span-2" />
+              <motion.div 
+                key="personal"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
+              >
+                  <div className="flex flex-col gap-5">
+                    <Input label="Full Name" icon="👤" value={data.fullName} onChange={(e) => handleChange('fullName', e.target.value)} placeholder="e.g. Karim Ahmed" />
+                    <Input label="Job Title" icon="💼" value={data.title} onChange={(e) => handleChange('title', e.target.value)} placeholder="e.g. Frontend Developer" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <Input label="Email" icon="📧" value={data.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="name@example.com" />
+                        <Input label="Phone" icon="📞" value={data.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="+20 100..." />
+                    </div>
+                    <Input label="LinkedIn" icon="🔗" value={data.linkedin} onChange={(e) => handleChange('linkedin', e.target.value)} placeholder="linkedin.com/in/..." />
                   </div>
-                  <div className="pt-4">
-                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-4">Professional Summary</label>
-                        <button onClick={() => handleAiTrigger('summary', data.summary)} className="text-xs px-3 py-1 bg-purple-600 rounded-full hover:bg-purple-500 transition text-white flex gap-1 items-center">✨ AI Rewrite</button>
-                     </div>
-                     <TextArea label="" value={data.summary} onChange={(e) => handleChange('summary', e.target.value)} placeholder="Describe your professional background..." />
-                  </div>
+                  
                   <div className="pt-2">
-                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-4">Skills</label>
-                        <button onClick={() => handleAiTrigger('skills', data.title + " " + data.summary)} className="text-xs px-3 py-1 bg-purple-600 rounded-full hover:bg-purple-500 transition text-white flex gap-1 items-center">✨ Suggest Skills</button>
+                     <div className="flex justify-between items-center mb-2 px-1">
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-4">Summary</label>
+                        <button onClick={() => handleAiTrigger('summary', data.summary)} className="text-[10px] px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition text-white flex gap-1 items-center font-bold">✨ AI Rewrite</button>
                      </div>
-                     <Input label="" value={data.skills.join(', ')} onChange={(e) => handleChange('skills', e.target.value.split(',').map(s => s.trim()))} placeholder="React, Node.js..." />
+                     <TextArea label="" value={data.summary} onChange={(e) => handleChange('summary', e.target.value)} placeholder="Briefly describe your professional background..." />
                   </div>
               </motion.div>
             )}
 
-            {/* Experience & Education are similar structures, simplified for brevity but full functionality maintained */}
+            {activeTab === 'skills' && (
+              <motion.div
+                key="skills"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
+              >
+                 <div className="bg-purple-900/20 border border-purple-500/30 p-6 rounded-[24px] text-center">
+                    <h3 className="text-purple-300 font-bold mb-2">Enhance your profile</h3>
+                    <p className="text-sm text-gray-400 mb-4">Let AI suggest relevant skills based on your title.</p>
+                    <button onClick={() => handleAiTrigger('skills', data.title + " " + data.summary)} className="px-6 py-2 bg-purple-600 rounded-full text-white font-bold text-sm shadow-lg hover:bg-purple-500 transition">✨ Suggest Skills</button>
+                 </div>
+
+                 <div>
+                    <Input label="Add Skill" value="" 
+                        placeholder="Type and press Enter..." 
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                const val = e.currentTarget.value.trim();
+                                if (val) {
+                                    handleChange('skills', [...data.skills, val]);
+                                    e.currentTarget.value = '';
+                                }
+                            }
+                        }}
+                    />
+                    <div className="flex flex-wrap gap-2 mt-4">
+                        {data.skills.map((skill, idx) => (
+                            <span key={idx} className="px-4 py-2 bg-white/10 border border-white/10 rounded-full text-sm text-white flex items-center gap-2 hover:bg-teal-500/20 hover:border-teal-500/50 hover:shadow-[0_0_15px_rgba(45,212,191,0.3)] transition-all cursor-default group">
+                                {skill}
+                                <button onClick={() => handleChange('skills', data.skills.filter(s => s !== skill))} className="text-gray-400 hover:text-white group-hover:text-teal-200">×</button>
+                            </span>
+                        ))}
+                    </div>
+                 </div>
+              </motion.div>
+            )}
+
             {(activeTab === 'experience' || activeTab === 'education') && (
-                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="relative z-10">
+                <motion.div 
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-6"
+                >
                      {/* List View */}
                      {!showForm && (
                         <div className="space-y-4">
                              {(activeTab === 'experience' ? data.experience : data.education).length === 0 && (
-                                 <div className="py-12 text-center border-2 border-dashed border-white/10 rounded-3xl">
-                                     <p className="text-gray-400">Add your first item</p>
+                                 <div className="py-12 text-center border-2 border-dashed border-white/10 rounded-[24px]">
+                                     <p className="text-gray-400">No items added yet.</p>
+                                     <button onClick={() => { 
+                                         if(activeTab === 'experience') { setTempExp({ id: '', company: '', role: '', duration: '', description: '' }); }
+                                         else { setTempEdu({ id: '', institution: '', degree: '', year: '' }); }
+                                         setEditingId(null); 
+                                         setShowForm(true); 
+                                     }} className="mt-4 text-teal-400 font-bold hover:text-teal-300">Add First Item</button>
                                  </div>
                              )}
                              {(activeTab === 'experience' ? data.experience : data.education).map((item: any) => (
-                                 <div key={item.id} className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition flex justify-between items-center group">
+                                 <div key={item.id} className="p-5 rounded-[24px] bg-white/5 border border-white/10 flex justify-between items-center group">
                                      <div>
-                                         <h4 className="font-bold text-white">{item.role || item.degree}</h4>
+                                         <h4 className="font-bold text-white text-lg">{item.role || item.degree}</h4>
                                          <p className="text-sm text-gray-400">{item.company || item.institution}</p>
                                      </div>
                                      <div className="flex gap-2">
-                                         <button onClick={() => activeTab === 'experience' ? editExperience(item) : editEducation(item)} className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-full transition"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                                         <button onClick={() => activeTab === 'experience' ? deleteExperience(item.id) : deleteEducation(item.id)} className="p-2 text-red-400 hover:bg-red-400/20 rounded-full transition"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                         <button onClick={() => activeTab === 'experience' ? editExperience(item) : editEducation(item)} className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-full transition">✏️</button>
+                                         <button onClick={() => activeTab === 'experience' ? deleteExperience(item.id) : deleteEducation(item.id)} className="p-2 text-red-400 hover:bg-red-400/20 rounded-full transition">🗑️</button>
                                      </div>
                                  </div>
                              ))}
-                             <button onClick={() => { 
-                                 if(activeTab === 'experience') { setTempExp({ id: '', company: '', role: '', duration: '', description: '' }); }
-                                 else { setTempEdu({ id: '', institution: '', degree: '', year: '' }); }
-                                 setEditingId(null); 
-                                 setShowForm(true); 
-                             }} className="w-full py-4 rounded-full border border-dashed border-teal-500/50 text-teal-400 hover:bg-teal-500/10 font-bold transition flex items-center justify-center gap-2">
-                                 <span>+ Add New</span>
-                             </button>
+                             {(activeTab === 'experience' ? data.experience : data.education).length > 0 && (
+                                <button onClick={() => { 
+                                    if(activeTab === 'experience') { setTempExp({ id: '', company: '', role: '', duration: '', description: '' }); }
+                                    else { setTempEdu({ id: '', institution: '', degree: '', year: '' }); }
+                                    setEditingId(null); 
+                                    setShowForm(true); 
+                                }} className="w-full py-4 rounded-full border border-dashed border-teal-500/30 text-teal-400 hover:bg-teal-500/10 font-bold transition flex items-center justify-center gap-2">
+                                    <span>+ Add Another</span>
+                                </button>
+                             )}
                         </div>
                      )}
 
                      {/* Form View */}
                      {showForm && (
-                         <div className="space-y-5">
-                             <h3 className="text-xl font-bold mb-4">{editingId ? 'Edit Item' : 'Add New Item'}</h3>
+                         <div className="space-y-5 animate-fade-in">
+                             <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-xl font-bold text-white">{editingId ? 'Edit Item' : 'New Item'}</h3>
+                                <button onClick={() => setShowForm(false)} className="text-sm text-gray-400 hover:text-white">Cancel</button>
+                             </div>
+                             
                              {activeTab === 'experience' ? (
                                  <>
                                     <Input label="Role" value={tempExp.role} onChange={e => setTempExp({...tempExp, role: e.target.value})} />
                                     <Input label="Company" value={tempExp.company} onChange={e => setTempExp({...tempExp, company: e.target.value})} />
                                     <Input label="Duration" value={tempExp.duration} onChange={e => setTempExp({...tempExp, duration: e.target.value})} />
                                     <div>
-                                        <div className="flex justify-between items-center mb-2">
+                                        <div className="flex justify-between items-center mb-2 px-1">
                                             <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-4">Description</label>
-                                            <button onClick={() => handleAiTrigger('experience', tempExp.description)} className="text-xs px-3 py-1 bg-purple-600 rounded-full hover:bg-purple-500 transition text-white flex gap-1 items-center">✨ Enhance</button>
+                                            <button onClick={() => handleAiTrigger('experience', tempExp.description)} className="text-[10px] px-3 py-1 bg-purple-600 rounded-full hover:bg-purple-500 transition text-white flex gap-1 items-center font-bold">✨ Enhance</button>
                                         </div>
                                         <TextArea label="" value={tempExp.description} onChange={e => setTempExp({...tempExp, description: e.target.value})} />
                                     </div>
-                                    <div className="flex gap-3 pt-4">
-                                        <button onClick={() => setShowForm(false)} className="flex-1 py-3 rounded-full border border-white/20 hover:bg-white/5 transition">Cancel</button>
-                                        <button onClick={saveExperience} className="flex-1 py-3 rounded-full bg-white text-slate-900 font-bold hover:bg-gray-100 transition">Save</button>
-                                    </div>
+                                    <button onClick={saveExperience} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">Save Experience</button>
                                  </>
                              ) : (
                                  <>
                                     <Input label="Institution" value={tempEdu.institution} onChange={e => setTempEdu({...tempEdu, institution: e.target.value})} />
                                     <Input label="Degree" value={tempEdu.degree} onChange={e => setTempEdu({...tempEdu, degree: e.target.value})} />
                                     <Input label="Year" value={tempEdu.year} onChange={e => setTempEdu({...tempEdu, year: e.target.value})} />
-                                    <div className="flex gap-3 pt-4">
-                                        <button onClick={() => setShowForm(false)} className="flex-1 py-3 rounded-full border border-white/20 hover:bg-white/5 transition">Cancel</button>
-                                        <button onClick={saveEducation} className="flex-1 py-3 rounded-full bg-white text-slate-900 font-bold hover:bg-gray-100 transition">Save</button>
-                                    </div>
+                                    <button onClick={saveEducation} className="w-full py-4 rounded-full bg-white text-slate-900 font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4">Save Education</button>
                                  </>
                              )}
                          </div>
                      )}
                 </motion.div>
             )}
-
-          </GlassCard>
-        </div>
+        </AnimatePresence>
+      </GlassCard>
+      
+      {/* Sticky Mobile Footer */}
+      <div className="fixed bottom-0 left-0 w-full p-4 z-40 bg-gradient-to-t from-slate-900 via-slate-900/90 to-transparent pb-8 pt-10">
+         <div className="max-w-3xl mx-auto flex gap-4">
+             <button 
+                onClick={() => navigate('/preview')}
+                className="flex-1 py-4 bg-gradient-to-r from-teal-500 to-indigo-600 rounded-full text-white font-bold text-lg shadow-[0_10px_30px_rgba(20,184,166,0.3)] hover:shadow-[0_15px_40px_rgba(20,184,166,0.4)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+             >
+                <span>Preview & Export</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+             </button>
+         </div>
       </div>
     </div>
   );
 };
 
-// 3. Preview Page (Full Screen)
+// 3. Preview Page
 const Preview: React.FC<{ data: ResumeData }> = ({ data }) => {
   const [showPayment, setShowPayment] = useState(false);
   const [exportToken, setExportToken] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  // Simple ATS Analysis (Reused logic)
+  // Simple ATS Analysis
   const analysis = useMemo(() => {
-    let score = 50; // Base
+    let score = 50; 
     const tips = [];
-    if (!data.summary) { score -= 10; tips.push("Add a summary."); }
-    if (data.skills.length < 5) { score -= 10; tips.push("Add more skills."); }
-    if (data.experience.length === 0) { score -= 20; tips.push("Add experience."); }
+    if (!data.summary) { score -= 10; tips.push("Add a professional summary."); }
+    if (data.skills.length < 5) { score -= 10; tips.push("Add at least 5 skills."); }
+    if (data.experience.length === 0) { score -= 20; tips.push("Add work experience."); }
     return { score: Math.max(0, score), tips };
   }, [data]);
 
@@ -436,20 +482,29 @@ const Preview: React.FC<{ data: ResumeData }> = ({ data }) => {
   };
 
   return (
-    <div className="min-h-screen pt-24 px-4 pb-20 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-24 px-4 pb-12 max-w-6xl mx-auto">
       {showPayment && <InstaPayModal onSuccess={(t) => { setExportToken(t); setShowPayment(false); setTimeout(handleDownload, 500); }} onClose={() => setShowPayment(false)} />}
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Sidebar Controls */}
-        <div className="lg:col-span-4 space-y-6">
+      <div className="flex justify-between items-center mb-8">
+          <button onClick={() => navigate('/editor')} className="text-gray-400 hover:text-white flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              Back to Editor
+          </button>
+          <h2 className="text-2xl font-bold">Final Preview</h2>
+          <div className="w-20"></div> {/* Spacer */}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Controls */}
+        <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
            <GlassCard className="border-t-4 border-t-teal-400">
-               <h3 className="text-xl font-bold mb-4">Final Review</h3>
+               <h3 className="text-xl font-bold mb-4">ATS Analysis</h3>
                <div className="flex items-center gap-4 mb-6">
-                   <div className="w-16 h-16 rounded-full border-4 border-teal-500/30 flex items-center justify-center text-xl font-bold text-teal-400">
+                   <div className={`w-16 h-16 rounded-full border-4 flex items-center justify-center text-xl font-bold ${analysis.score >= 80 ? 'border-green-500/30 text-green-400' : 'border-yellow-500/30 text-yellow-400'}`}>
                        {analysis.score}
                    </div>
                    <div className="text-sm text-gray-300">
-                       <p className="font-semibold text-white">ATS Score</p>
+                       <p className="font-semibold text-white">Overall Score</p>
                        <p>{analysis.score < 70 ? "Needs Improvement" : "Ready to Send"}</p>
                    </div>
                </div>
@@ -459,31 +514,36 @@ const Preview: React.FC<{ data: ResumeData }> = ({ data }) => {
                            <span>⚠️</span> {tip}
                        </div>
                    ))}
-                   {analysis.tips.length === 0 && <div className="text-green-400 text-xs">No critical issues found!</div>}
+                   {analysis.tips.length === 0 && <div className="text-green-400 text-xs flex items-center gap-2"><span>✅</span> No critical issues found!</div>}
                </div>
            </GlassCard>
 
            <GlassCard>
-                <div className="text-center mb-4">
-                    <span className="text-3xl font-bold text-white block">20 EGP</span>
-                    <span className="text-sm text-gray-400 line-through">100 EGP</span>
+                <div className="text-center mb-6">
+                    <span className="block text-gray-400 text-sm mb-1">Total Price</span>
+                    <span className="text-4xl font-bold text-white block">20 EGP</span>
+                    <span className="text-sm text-gray-500 line-through">100 EGP</span>
                 </div>
                 <button 
                     onClick={handleDownload}
                     className={`w-full py-4 rounded-full font-bold text-lg shadow-lg transition-transform hover:scale-105 ${exportToken ? 'bg-green-500 text-white' : 'bg-white text-indigo-900'}`}
                 >
-                    {exportToken ? "Download PDF" : "Unlock Export"}
+                    {exportToken ? "Download PDF" : "Unlock & Download"}
                 </button>
-                <div className="mt-4 flex justify-center gap-2 opacity-60">
-                     <span className="text-[10px] text-gray-400">Secured by InstaPay</span>
+                <div className="mt-4 flex flex-col items-center gap-2 opacity-60">
+                     <span className="text-[10px] text-gray-400 uppercase tracking-widest">Secured by</span>
+                     <div className="font-bold italic text-sm"><span className="text-purple-400">Insta</span><span className="text-white">Pay</span></div>
                 </div>
            </GlassCard>
         </div>
 
-        {/* Resume Render */}
-        <div className="lg:col-span-8 flex justify-center">
-            <div className="border border-white/10 shadow-2xl overflow-hidden rounded-sm">
-                <ResumePaper data={data} scale={0.9} />
+        {/* Resume Preview */}
+        <div className="lg:col-span-2 flex justify-center order-1 lg:order-2">
+            <div className="border border-white/10 shadow-2xl overflow-hidden rounded-sm max-w-full">
+                {/* Scale down slightly for mobile view if needed via CSS transform in parent */}
+                <div className="origin-top transform scale-[0.45] sm:scale-[0.6] md:scale-[0.75] lg:scale-[0.85] xl:scale-100">
+                    <ResumePaper data={data} />
+                </div>
             </div>
         </div>
       </div>
@@ -499,16 +559,16 @@ const AppContent: React.FC = () => {
     return (
         <div className="bg-slate-900 text-white min-h-screen font-sans selection:bg-teal-500 selection:text-white overflow-x-hidden">
             {location.pathname !== '/' && (
-                <nav className="fixed top-0 w-full z-40 bg-slate-900/80 backdrop-blur-md border-b border-white/5 transition-all duration-300">
+                <nav className="fixed top-0 w-full z-40 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between h-16">
                             <Link to="/" className="flex items-center gap-2">
                                 <Logo className="w-8 h-8 text-teal-400" />
                                 <span className="font-bold text-lg hidden sm:block">Hash Resume</span>
                             </Link>
-                            <div className="flex gap-1 bg-white/5 p-1 rounded-full">
-                                <Link to="/editor" className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${location.pathname === '/editor' ? 'bg-teal-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>Editor</Link>
-                                <Link to="/preview" className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${location.pathname === '/preview' ? 'bg-teal-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>Preview</Link>
+                            <div className="flex gap-1 bg-white/5 p-1 rounded-full border border-white/5">
+                                <Link to="/editor" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${location.pathname === '/editor' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}>Editor</Link>
+                                <Link to="/preview" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${location.pathname === '/preview' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}>Preview</Link>
                             </div>
                         </div>
                     </div>

@@ -2,9 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    // appDir: true, // Only if using App Router structure
+    appDir: true,
   },
-  // Ensure environment variables are accessible if using Next.js build
   env: {
     API_KEY: process.env.API_KEY,
   },
