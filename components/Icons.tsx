@@ -18,7 +18,8 @@ import {
   GripVertical,
   BarChart,
   ArrowRight,
-  Zap
+  Zap,
+  Home
 } from 'lucide-react';
 
 export const Icons = {
@@ -41,5 +42,6 @@ export const Icons = {
   DragHandle: GripVertical,
   Chart: BarChart,
   ArrowRight,
-  Zap
+  Zap,
+  Home
 };

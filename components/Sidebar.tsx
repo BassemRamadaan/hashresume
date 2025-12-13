@@ -9,6 +9,7 @@ interface SidebarProps {
   setIsOpen: (isOpen: boolean) => void;
   isVerified: boolean;
   onDownload: () => void;
+  onHome: () => void;
 }
 
 const menuItems: { id: SectionType; label: string; icon: any }[] = [
@@ -27,7 +28,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   isOpen, 
   setIsOpen,
   isVerified,
-  onDownload
+  onDownload,
+  onHome
 }) => {
   return (
     <>
@@ -60,6 +62,19 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          <button
+            onClick={() => {
+              onHome();
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 group mb-2"
+          >
+            <Icons.Home size={18} className="text-slate-400 group-hover:text-slate-600" />
+            Home
+          </button>
+
+          <div className="h-px bg-slate-100 my-2 mx-4" />
+
           {menuItems.map((item) => (
             <button
               key={item.id}

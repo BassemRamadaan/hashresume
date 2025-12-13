@@ -9,6 +9,30 @@ interface EditorProps {
   onChange: (data: ResumeData) => void;
 }
 
+// Data Lists for Dropdowns
+const jobTitles = [
+  "Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer",
+  "Product Manager", "Project Manager", "Data Scientist", "Data Analyst",
+  "UX/UI Designer", "Graphic Designer", "Marketing Manager", "Sales Representative",
+  "Accountant", "Financial Analyst", "Teacher", "Customer Service Representative",
+  "Human Resources Manager", "Operations Manager", "Business Analyst", "DevOps Engineer"
+];
+
+const degrees = [
+  "High School Diploma", "Associate Degree", "Bachelor's Degree", "Master's Degree", 
+  "Doctorate (PhD)", "Diploma", "Certification"
+];
+
+const egyptianUniversities = [
+  "Cairo University", "Ain Shams University", "Alexandria University", 
+  "The American University in Cairo (AUC)", "German University in Cairo (GUC)",
+  "Helwan University", "Mansoura University", "Assiut University", 
+  "Zagazig University", "The British University in Egypt (BUE)",
+  "Future University in Egypt (FUE)", "Misr International University (MIU)",
+  "October 6 University", "Nile University", "Benha University", 
+  "Minia University", "Suez Canal University", "Tanta University"
+];
+
 const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
   const [loadingAI, setLoadingAI] = useState(false);
   
@@ -32,6 +56,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
 
   const handleAI = async (fieldContext: string, setter: (val: string) => void, currentVal: string) => {
     setLoadingAI(true);
+    // Pass the section type to the service to allow for tailored prompts
     const suggestion = await generateResumeContent(section, fieldContext, currentVal);
     setter(suggestion);
     setLoadingAI(false);
@@ -85,6 +110,71 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
 
     onChange({ ...data, [listKey]: list });
     setDraggedItem(null);
+  };
+
+  // Helper for Hybrid Select/Input fields
+  const renderSelectWithCustomOption = (
+    label: string, 
+    value: string, 
+    onChangeValue: (val: string) => void, 
+    options: string[], 
+    placeholder: string
+  ) => {
+    // Treat as custom if value is not in options list and is not empty
+    const isCustom = value && !options.includes(value);
+
+    if (isCustom) {
+      return (
+        <div className="relative">
+          <label className="block text-sm font-medium text-slate-600 mb-1">{label}</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+              value={value}
+              onChange={(e) => onChangeValue(e.target.value)}
+              placeholder={placeholder}
+              autoFocus
+            />
+            <button 
+              onClick={() => onChangeValue('')}
+              className="px-3 py-2 bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg font-medium text-sm transition-colors whitespace-nowrap"
+              title="Back to list"
+            >
+              List
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <label className="block text-sm font-medium text-slate-600 mb-1">{label}</label>
+        <div className="relative">
+          <select
+            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all appearance-none text-slate-900"
+            value={value}
+            onChange={(e) => {
+              if (e.target.value === 'CUSTOM_OPTION') {
+                onChangeValue(' '); // Set a temp value to trigger custom input mode
+              } else {
+                onChangeValue(e.target.value);
+              }
+            }}
+          >
+            <option value="">Select {label}</option>
+            {options.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+            <option value="CUSTOM_OPTION" className="font-semibold text-teal-600">+ Other / Custom...</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+            <Icons.ChevronRight className="rotate-90" size={16} />
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // --- Render Functions ---
@@ -208,16 +298,16 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
             placeholder="John Doe"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-600 mb-1">Job Title</label>
-          <input
-            type="text"
-            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
-            value={data.personalInfo.jobTitle}
-            onChange={(e) => onChange({ ...data, personalInfo: { ...data.personalInfo, jobTitle: e.target.value } })}
-            placeholder="Software Engineer"
-          />
-        </div>
+        
+        {/* Job Title Dropdown */}
+        {renderSelectWithCustomOption(
+          "Job Title",
+          data.personalInfo.jobTitle,
+          (val) => onChange({ ...data, personalInfo: { ...data.personalInfo, jobTitle: val.trimStart() } }),
+          jobTitles,
+          "Software Engineer"
+        )}
+
         <div>
           <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
           <input
@@ -269,7 +359,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <Icons.Summary className="text-teal-600" /> Professional Summary
         </h2>
         <button
-          onClick={() => handleAI(`${data.personalInfo.jobTitle} with specific skills`, (val) => onChange({ ...data, summary: val }), data.summary)}
+          onClick={() => handleAI(`${data.personalInfo.jobTitle}`, (val) => onChange({ ...data, summary: val }), data.summary)}
           disabled={loadingAI}
           className="flex items-center gap-2 text-xs font-medium bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity"
         >
@@ -453,26 +543,33 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
               <Icons.Delete size={18} />
             </button>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                placeholder="Degree / Certificate"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none font-medium"
-                value={item.degree}
-                onChange={(e) => {
+              
+              {/* Degree Dropdown */}
+              {renderSelectWithCustomOption(
+                "Degree / Certificate",
+                item.degree,
+                (val) => {
                   const newEdu = [...data.education];
-                  newEdu[index].degree = e.target.value;
+                  newEdu[index].degree = val.trimStart();
                   onChange({ ...data, education: newEdu });
-                }}
-              />
-              <input
-                placeholder="University / School"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none"
-                value={item.school}
-                onChange={(e) => {
+                },
+                degrees,
+                "Bachelor's Degree"
+              )}
+
+              {/* University Dropdown */}
+              {renderSelectWithCustomOption(
+                "University / School",
+                item.school,
+                (val) => {
                   const newEdu = [...data.education];
-                  newEdu[index].school = e.target.value;
+                  newEdu[index].school = val.trimStart();
                   onChange({ ...data, education: newEdu });
-                }}
-              />
+                },
+                egyptianUniversities,
+                "Cairo University"
+              )}
+
               <input
                 placeholder="Start Date"
                 className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm"

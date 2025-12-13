@@ -10,37 +10,95 @@ export const generateResumeContent = async (
   context: string,
   currentContent: string
 ): Promise<string> => {
-  try {
-    const prompt = `
-      You are an expert ATS-friendly resume writer.
-      
-      Task: Write or rewrite high-quality, professional content for the "${section}" section of a CV.
-      
-      User Context: "${context}"
-      Current Content (if any): "${currentContent}"
-      
-      Guidelines:
-      1. Use strong action verbs (e.g., Spearheaded, Developed, Optimized, Engineered).
-      2. Focus on achievements and quantifiable results.
-      3. Keep the tone professional, concise, and impactful.
-      4. For "Experience", provide 3-4 bullet points.
-      5. For "Summary", provide a powerful 3-sentence summary.
-      6. Return ONLY the suggested text.
-    `;
+  if (!process.env.API_KEY) return "API Key missing. Cannot generate content.";
 
+  let promptTemplate = "";
+  
+  // Custom templates based on section
+  switch (section) {
+    case 'experience':
+      promptTemplate = `
+        Task: Write or rewrite a professional job description for the experience section of a CV.
+        Context: ${context}
+        Current Content: "${currentContent}"
+        
+        Guidelines:
+        - Use bullet points (•).
+        - Start each bullet with a strong action verb (e.g., Orchestrated, Developed, Accelerated).
+        - QUANTIFY achievements where possible (e.g., "Increased revenue by 20%", "Managed team of 5").
+        - Focus on results and impact, not just duties.
+        - Keep it concise and ATS-friendly.
+      `;
+      break;
+    case 'summary':
+      promptTemplate = `
+        Task: Write a powerful professional summary for a CV.
+        Context: ${context}
+        Current Content: "${currentContent}"
+        
+        Guidelines:
+        - Write 3-4 impactful sentences.
+        - Highlight years of experience, key skills, and major achievements.
+        - Tailor it to the job title provided in the context.
+        - Avoid generic clichés like "hard worker".
+      `;
+      break;
+    case 'projects':
+      promptTemplate = `
+        Task: Write a compelling project description.
+        Context: ${context}
+        Current Content: "${currentContent}"
+        
+        Guidelines:
+        - Briefly explain what the project does.
+        - Mention specific technologies used.
+        - Highlight the problem solved or the value added.
+      `;
+      break;
+    case 'skills':
+       promptTemplate = `
+        Task: Generate a comma-separated list of top technical and soft skills for a CV.
+        Job Title/Context: ${context}
+        Current Skills: "${currentContent}"
+        
+        Guidelines:
+        - Return ONLY a comma-separated list.
+        - Prioritize hard skills relevant to the job title.
+        - Include key industry keywords for ATS optimization.
+      `;
+      break;
+    default:
+      promptTemplate = `
+        Task: Write high-quality content for the "${section}" section of a CV.
+        Context: ${context}
+        Current Content: "${currentContent}"
+        
+        Guidelines:
+        - Professional tone.
+        - Concise and clear.
+        - ATS-friendly phrasing.
+      `;
+  }
+
+  try {
     const response = await ai.models.generateContent({
       model: model,
-      contents: prompt,
+      contents: promptTemplate,
+      config: {
+        systemInstruction: `You are an expert ATS-friendly resume writer. Return ONLY the suggested text.`
+      }
     });
 
     return response.text?.trim() || "Could not generate suggestion.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Error generating suggestions. Please check your connection.";
+    return "Error generating suggestions. Please check your connection or API key.";
   }
 };
 
 export const analyzeATSScore = async (data: ResumeData): Promise<ATSAnalysis> => {
+  if (!process.env.API_KEY) return { score: 0, tips: ["API Key missing."] };
+
   try {
     const prompt = `
       Analyze this resume JSON data for ATS compatibility and overall quality.
@@ -59,7 +117,7 @@ export const analyzeATSScore = async (data: ResumeData): Promise<ATSAnalysis> =>
             tips: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: "3 critical, short improvements"
+              description: "3 critical, short improvements to increase the score"
             }
           }
         }
@@ -70,16 +128,18 @@ export const analyzeATSScore = async (data: ResumeData): Promise<ATSAnalysis> =>
     return JSON.parse(text) as ATSAnalysis;
   } catch (error) {
     console.error("ATS Score Error", error);
-    return { score: 0, tips: ["Could not analyze resume."] };
+    return { score: 0, tips: ["Could not analyze resume. Please try again."] };
   }
 };
 
 export const calculateJobMatch = async (resumeData: ResumeData, jobDescription: string): Promise<JobMatchAnalysis> => {
+  if (!process.env.API_KEY) return { matchPercentage: 0, missingKeywords: [], advice: "API Key missing." };
+
   try {
     const prompt = `
       Compare this resume against the job description.
       Resume: ${JSON.stringify(resumeData)}
-      Job Description: "${jobDescription.substring(0, 2000)}"
+      Job Description: "${jobDescription.substring(0, 5000)}"
     `;
 
     const response = await ai.models.generateContent({
@@ -90,12 +150,13 @@ export const calculateJobMatch = async (resumeData: ResumeData, jobDescription: 
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            matchPercentage: { type: Type.INTEGER },
+            matchPercentage: { type: Type.INTEGER, description: "Match percentage from 0 to 100" },
             missingKeywords: {
               type: Type.ARRAY,
-              items: { type: Type.STRING }
+              items: { type: Type.STRING },
+              description: "List of critical keywords missing from the resume"
             },
-            advice: { type: Type.STRING }
+            advice: { type: Type.STRING, description: "Short advice on how to improve the match" }
           }
         }
       }
@@ -105,14 +166,14 @@ export const calculateJobMatch = async (resumeData: ResumeData, jobDescription: 
     return JSON.parse(text) as JobMatchAnalysis;
   } catch (error) {
     console.error("Job Match Error", error);
-    return { matchPercentage: 0, missingKeywords: [], advice: "Analysis failed." };
+    return { matchPercentage: 0, missingKeywords: [], advice: "Analysis failed. Please try again." };
   }
 };
 
 export const analyzeJobDescription = async (jobDescription: string): Promise<string[]> => {
-  // Legacy function kept for backward compatibility if needed, but we prefer calculateJobMatch
+  if (!process.env.API_KEY) return [];
   try {
-    const prompt = `Extract top 15 technical skills from this JD as a list: ${jobDescription.substring(0, 1000)}`;
+    const prompt = `Extract top 15 technical skills from this JD as a list: ${jobDescription.substring(0, 2000)}`;
     const response = await ai.models.generateContent({ 
       model: model, 
       contents: prompt,
@@ -124,6 +185,7 @@ export const analyzeJobDescription = async (jobDescription: string): Promise<str
         }
       }
     });
-    return JSON.parse(response.text || "[]");
+    const text = response.text || "[]";
+    return JSON.parse(text) as string[];
   } catch (e) { return []; }
 };

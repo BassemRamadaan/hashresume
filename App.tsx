@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ResumeData, SectionType } from './types';
 import Sidebar from './components/Sidebar';
 import Editor from './components/Editor';
@@ -23,6 +23,8 @@ const initialData: ResumeData = {
   projects: []
 };
 
+const STORAGE_KEY = 'hash_resume_data';
+
 function App() {
   const [view, setView] = useState<'landing' | 'app'>('landing');
   const [resumeData, setResumeData] = useState<ResumeData>(initialData);
@@ -30,9 +32,34 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Mobile: Toggle between Edit and Preview
   const [mobileViewMode, setMobileViewMode] = useState<'edit' | 'preview'>('edit');
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setResumeData({ ...initialData, ...parsedData });
+      } catch (error) {
+        console.error('Failed to load resume data:', error);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Auto-save data to localStorage when it changes
+  useEffect(() => {
+    if (isLoaded) {
+      const timeoutId = setTimeout(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(resumeData));
+      }, 500); // Debounce save by 500ms
+      return () => clearTimeout(timeoutId);
+    }
+  }, [resumeData, isLoaded]);
 
   const handleDownload = () => {
     if (!isVerified) {
@@ -61,6 +88,7 @@ function App() {
         setIsOpen={setIsSidebarOpen}
         isVerified={isVerified}
         onDownload={handleDownload}
+        onHome={() => setView('landing')}
       />
 
       {/* Main Content Area */}
