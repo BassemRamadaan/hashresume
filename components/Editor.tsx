@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { ResumeData, SectionType, ExperienceItem, EducationItem, ProjectItem } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ResumeData, SectionType, ATSAnalysis, JobMatchAnalysis } from '../types';
 import { Icons } from './Icons';
-import { generateResumeContent, analyzeJobDescription } from '../services/geminiService';
+import { generateResumeContent, analyzeATSScore, calculateJobMatch } from '../services/geminiService';
 
 interface EditorProps {
   section: SectionType;
@@ -12,11 +12,23 @@ interface EditorProps {
 const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
   const [loadingAI, setLoadingAI] = useState(false);
   
-  // Job Description Analysis State
+  // AI Analysis States
+  const [atsAnalysis, setAtsAnalysis] = useState<ATSAnalysis | null>(null);
+  const [isAnalyzingAts, setIsAnalyzingAts] = useState(false);
+  
+  // Job Match State
   const [jdText, setJdText] = useState('');
-  const [jdSkills, setJdSkills] = useState<string[]>([]);
-  const [isAnalyzingJd, setIsAnalyzingJd] = useState(false);
-  const [showJdSection, setShowJdSection] = useState(false);
+  const [jobMatch, setJobMatch] = useState<JobMatchAnalysis | null>(null);
+  const [isMatching, setIsMatching] = useState(false);
+
+  // Drag and Drop State
+  const [draggedItem, setDraggedItem] = useState<{ index: number; type: SectionType } | null>(null);
+
+  // Auto-analyze ATS on mount (once) or when big sections change significantly?
+  // For now, manual trigger or simple effect
+  useEffect(() => {
+    // Initial silent check or keep it manual to save tokens
+  }, []);
 
   const handleAI = async (fieldContext: string, setter: (val: string) => void, currentVal: string) => {
     setLoadingAI(true);
@@ -25,20 +37,154 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
     setLoadingAI(false);
   };
 
-  const handleAnalyzeJd = async () => {
+  const runATSCheck = async () => {
+    setIsAnalyzingAts(true);
+    const result = await analyzeATSScore(data);
+    setAtsAnalysis(result);
+    setIsAnalyzingAts(false);
+  };
+
+  const runJobMatch = async () => {
     if (!jdText.trim()) return;
-    setIsAnalyzingJd(true);
-    const skills = await analyzeJobDescription(jdText);
-    setJdSkills(skills);
-    setIsAnalyzingJd(false);
+    setIsMatching(true);
+    const result = await calculateJobMatch(data, jdText);
+    setJobMatch(result);
+    setIsMatching(false);
   };
 
   const addSkill = (skill: string) => {
-    const cleanSkill = skill.replace(/^['"]|['"]$/g, ''); // Remove quotes if any
+    const cleanSkill = skill.replace(/^['"]|['"]$/g, ''); 
     if (!data.skills.includes(cleanSkill)) {
       onChange({ ...data, skills: [...data.skills, cleanSkill] });
     }
   };
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent, index: number, type: SectionType) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.drag-handle')) {
+      e.preventDefault();
+      return;
+    }
+    setDraggedItem({ index, type });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number, type: SectionType, listKey: keyof ResumeData) => {
+    e.preventDefault();
+    if (!draggedItem || draggedItem.type !== type || draggedItem.index === dropIndex) return;
+
+    const list = [...(data[listKey] as any[])];
+    const itemToMove = list[draggedItem.index];
+    list.splice(draggedItem.index, 1);
+    list.splice(dropIndex, 0, itemToMove);
+
+    onChange({ ...data, [listKey]: list });
+    setDraggedItem(null);
+  };
+
+  // --- Render Functions ---
+
+  const renderATSWidget = () => (
+    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 text-white mb-6 shadow-lg">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold flex items-center gap-2">
+          <Icons.Chart className="text-teal-400" size={20} /> ATS Score
+        </h3>
+        <button 
+          onClick={runATSCheck}
+          disabled={isAnalyzingAts}
+          className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+        >
+          {isAnalyzingAts ? <div className="w-3 h-3 border-2 border-white/50 border-t-white rounded-full animate-spin" /> : <Icons.Zap size={14} />}
+          Analyze Now
+        </button>
+      </div>
+      
+      {atsAnalysis ? (
+        <div className="animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-end gap-2 mb-3">
+            <span className={`text-4xl font-bold ${atsAnalysis.score >= 80 ? 'text-green-400' : atsAnalysis.score >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {atsAnalysis.score}
+            </span>
+            <span className="text-slate-400 text-sm mb-1">/ 100</span>
+          </div>
+          <div className="space-y-2">
+             {atsAnalysis.tips.map((tip, i) => (
+               <div key={i} className="flex gap-2 text-xs md:text-sm text-slate-300">
+                 <Icons.Check size={14} className="mt-0.5 shrink-0 text-teal-500" />
+                 {tip}
+               </div>
+             ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-sm text-slate-400 italic">
+          Click analyze to check your resume score.
+        </div>
+      )}
+    </div>
+  );
+
+  const renderJobMatch = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <Icons.Target className="text-teal-600" /> Job Match Analyzer
+      </h2>
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <label className="block text-sm font-medium text-slate-700 mb-2">Job Description</label>
+        <textarea
+          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none h-40 resize-none transition-all text-sm"
+          value={jdText}
+          onChange={(e) => setJdText(e.target.value)}
+          placeholder="Paste the job description (text only) here to see how well you match..."
+        />
+        <div className="mt-3 flex justify-end">
+          <button 
+            onClick={runJobMatch}
+            disabled={isMatching || !jdText.trim()}
+            className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 font-medium text-sm"
+          >
+            {isMatching ? 'Analyzing...' : <>Check Match <Icons.ArrowRight size={16} /></>}
+          </button>
+        </div>
+
+        {jobMatch && (
+          <div className="mt-6 pt-6 border-t border-slate-100 animate-in fade-in">
+            <div className="flex items-center gap-4 mb-4">
+              <div className={`
+                w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold border-4
+                ${jobMatch.matchPercentage > 75 ? 'border-green-500 text-green-700 bg-green-50' : 'border-yellow-500 text-yellow-700 bg-yellow-50'}
+              `}>
+                {jobMatch.matchPercentage}%
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-800">Match Score</h4>
+                <p className="text-sm text-slate-500">{jobMatch.advice}</p>
+              </div>
+            </div>
+
+            {jobMatch.missingKeywords.length > 0 && (
+              <div>
+                <h5 className="text-xs font-bold uppercase text-slate-400 mb-2">Missing Keywords</h5>
+                <div className="flex flex-wrap gap-2">
+                  {jobMatch.missingKeywords.map((kw, i) => (
+                    <span key={i} className="px-2 py-1 bg-red-50 text-red-600 border border-red-100 rounded text-xs font-medium">
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   const renderPersonalInfo = () => (
     <div className="space-y-4">
@@ -50,7 +196,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <label className="block text-sm font-medium text-slate-600 mb-1">Full Name</label>
           <input
             type="text"
-            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all duration-200 hover:border-slate-300"
+            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
             value={data.personalInfo.fullName}
             onChange={(e) => onChange({ ...data, personalInfo: { ...data.personalInfo, fullName: e.target.value } })}
             placeholder="John Doe"
@@ -60,7 +206,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <label className="block text-sm font-medium text-slate-600 mb-1">Job Title</label>
           <input
             type="text"
-            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all duration-200 hover:border-slate-300"
+            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
             value={data.personalInfo.jobTitle}
             onChange={(e) => onChange({ ...data, personalInfo: { ...data.personalInfo, jobTitle: e.target.value } })}
             placeholder="Software Engineer"
@@ -70,7 +216,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
           <input
             type="email"
-            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all duration-200 hover:border-slate-300"
+            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
             value={data.personalInfo.email}
             onChange={(e) => onChange({ ...data, personalInfo: { ...data.personalInfo, email: e.target.value } })}
             placeholder="john@example.com"
@@ -80,7 +226,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <label className="block text-sm font-medium text-slate-600 mb-1">Phone</label>
           <input
             type="tel"
-            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all duration-200 hover:border-slate-300"
+            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
             value={data.personalInfo.phone}
             onChange={(e) => onChange({ ...data, personalInfo: { ...data.personalInfo, phone: e.target.value } })}
             placeholder="+20 123 456 7890"
@@ -90,7 +236,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <label className="block text-sm font-medium text-slate-600 mb-1">Location</label>
           <input
             type="text"
-            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all duration-200 hover:border-slate-300"
+            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
             value={data.personalInfo.location}
             onChange={(e) => onChange({ ...data, personalInfo: { ...data.personalInfo, location: e.target.value } })}
             placeholder="Cairo, Egypt"
@@ -100,7 +246,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <label className="block text-sm font-medium text-slate-600 mb-1">LinkedIn</label>
           <input
             type="text"
-            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all duration-200 hover:border-slate-300"
+            className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all"
             value={data.personalInfo.linkedin}
             onChange={(e) => onChange({ ...data, personalInfo: { ...data.personalInfo, linkedin: e.target.value } })}
             placeholder="linkedin.com/in/john"
@@ -124,14 +270,12 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
           <Icons.AI size={14} /> {loadingAI ? 'Thinking...' : 'AI Suggest'}
         </button>
       </div>
-      <div className="relative">
-        <textarea
-          className="w-full p-4 h-48 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none leading-relaxed resize-none transition-all duration-200 hover:border-slate-300"
-          value={data.summary}
-          onChange={(e) => onChange({ ...data, summary: e.target.value })}
-          placeholder="Briefly describe your professional background..."
-        />
-      </div>
+      <textarea
+        className="w-full p-4 h-48 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none leading-relaxed resize-none transition-all"
+        value={data.summary}
+        onChange={(e) => onChange({ ...data, summary: e.target.value })}
+        placeholder="Briefly describe your professional background..."
+      />
     </div>
   );
 
@@ -154,7 +298,23 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
 
       <div className="space-y-4">
         {data.experience.map((item, index) => (
-          <div key={item.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group animate-in fade-in zoom-in-95 duration-300">
+          <div 
+            key={item.id} 
+            draggable
+            onDragStart={(e) => handleDragStart(e, index, 'experience')}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, index, 'experience', 'experience')}
+            className={`
+              bg-white p-5 pl-12 rounded-xl border transition-all relative group animate-in fade-in zoom-in-95
+              ${draggedItem?.type === 'experience' && draggedItem.index === index 
+                ? 'opacity-40 border-dashed border-teal-500' 
+                : 'border-slate-200 shadow-sm'}
+            `}
+          >
+            <div className="absolute left-3 top-5 text-slate-300 hover:text-teal-600 cursor-grab active:cursor-grabbing drag-handle p-1">
+              <Icons.DragHandle size={24} />
+            </div>
+
             <button
               onClick={() => {
                 const newExp = [...data.experience];
@@ -168,7 +328,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <input
                 placeholder="Job Title"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none font-medium transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none font-medium"
                 value={item.title}
                 onChange={(e) => {
                   const newExp = [...data.experience];
@@ -178,7 +338,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
               />
               <input
                 placeholder="Company"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none"
                 value={item.company}
                 onChange={(e) => {
                   const newExp = [...data.experience];
@@ -188,7 +348,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
               />
               <input
                 placeholder="Start Date"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm"
                 value={item.startDate}
                 onChange={(e) => {
                   const newExp = [...data.experience];
@@ -198,7 +358,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
               />
               <input
                 placeholder="End Date"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm"
                 value={item.endDate}
                 onChange={(e) => {
                   const newExp = [...data.experience];
@@ -210,7 +370,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
             <div className="relative mt-2">
               <textarea
                 placeholder="Description of responsibilities..."
-                className="w-full p-3 bg-slate-50 rounded border-none focus:ring-1 focus:ring-teal-500 text-sm h-24 resize-none transition-all"
+                className="w-full p-3 bg-slate-50 rounded border-none focus:ring-1 focus:ring-teal-500 text-sm h-24 resize-none"
                 value={item.description}
                 onChange={(e) => {
                   const newExp = [...data.experience];
@@ -230,7 +390,6 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
                   )}
                   disabled={loadingAI}
                   className="absolute bottom-2 right-2 flex items-center gap-1.5 p-1.5 bg-white shadow-sm border border-slate-200 rounded text-xs font-medium text-slate-600 hover:text-purple-600 transition-colors"
-                  title="AI Enhance"
                 >
                   <Icons.AI size={14} /> AI Rewrite
                 </button>
@@ -260,7 +419,23 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
 
       <div className="space-y-4">
         {data.education.map((item, index) => (
-          <div key={item.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative animate-in fade-in zoom-in-95 duration-300">
+          <div 
+            key={item.id} 
+            draggable
+            onDragStart={(e) => handleDragStart(e, index, 'education')}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, index, 'education', 'education')}
+            className={`
+              bg-white p-5 pl-12 rounded-xl border transition-all relative animate-in fade-in zoom-in-95
+              ${draggedItem?.type === 'education' && draggedItem.index === index 
+                ? 'opacity-40 border-dashed border-teal-500' 
+                : 'border-slate-200 shadow-sm'}
+            `}
+          >
+             <div className="absolute left-3 top-5 text-slate-300 hover:text-teal-600 cursor-grab active:cursor-grabbing drag-handle p-1">
+                <Icons.DragHandle size={24} />
+             </div>
+
              <button
               onClick={() => {
                 const newEdu = [...data.education];
@@ -274,7 +449,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 placeholder="Degree / Certificate"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none font-medium transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none font-medium"
                 value={item.degree}
                 onChange={(e) => {
                   const newEdu = [...data.education];
@@ -284,7 +459,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
               />
               <input
                 placeholder="University / School"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none"
                 value={item.school}
                 onChange={(e) => {
                   const newEdu = [...data.education];
@@ -294,7 +469,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
               />
               <input
                 placeholder="Start Date"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm"
                 value={item.startDate}
                 onChange={(e) => {
                   const newEdu = [...data.education];
@@ -304,7 +479,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
               />
               <input
                 placeholder="End Date"
-                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm transition-colors"
+                className="p-2 border-b border-slate-200 focus:border-teal-500 outline-none text-sm"
                 value={item.endDate}
                 onChange={(e) => {
                   const newEdu = [...data.education];
@@ -329,7 +504,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
 
       <div className="relative">
          <textarea
-          className="w-full p-4 h-32 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none resize-none transition-all duration-200 hover:border-slate-300"
+          className="w-full p-4 h-32 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none resize-none transition-all"
           value={data.skills.join(', ')}
           onChange={(e) => onChange({ ...data, skills: e.target.value.split(',').map(s => s.trimLeft()) })} 
           placeholder="Java, Communication, Project Management..."
@@ -347,74 +522,9 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
         </button>
       </div>
 
-      {/* Skills Analysis Section */}
-      <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden transition-all duration-300">
-        <button 
-          onClick={() => setShowJdSection(!showJdSection)}
-          className="w-full px-4 py-3 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors"
-        >
-          <div className="flex items-center gap-2 text-slate-700 font-semibold">
-            <Icons.Target size={18} className="text-teal-600" /> 
-            Match with Job Description
-          </div>
-          <Icons.ChevronRight size={16} className={`text-slate-400 transform transition-transform duration-200 ${showJdSection ? 'rotate-90' : ''}`} />
-        </button>
-        
-        {showJdSection && (
-          <div className="p-4 border-t border-slate-200 animate-in fade-in slide-in-from-top-2 duration-300">
-             <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">Paste Job Description</label>
-             <textarea
-                className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm h-32 resize-none mb-3 transition-colors"
-                value={jdText}
-                onChange={(e) => setJdText(e.target.value)}
-                placeholder="Paste the full job description here to extract relevant skills..."
-             />
-             <button 
-               onClick={handleAnalyzeJd} 
-               disabled={isAnalyzingJd || !jdText.trim()}
-               className="w-full md:w-auto bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors duration-200 transform active:scale-95"
-             >
-               {isAnalyzingJd ? (
-                 <>Analyzing...</>
-               ) : (
-                 <><Icons.AI size={16} /> Analyze & Extract Skills</>
-               )}
-             </button>
-             
-             {jdSkills.length > 0 && (
-               <div className="mt-4 pt-4 border-t border-slate-200 animate-in fade-in duration-500">
-                 <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                   <Icons.Check size={14} className="text-green-600" /> Suggested Skills
-                   <span className="text-xs font-normal text-slate-500">(Click to add)</span>
-                 </h4>
-                 <div className="flex flex-wrap gap-2">
-                   {jdSkills.map((skill, i) => (
-                     <button 
-                       key={i}
-                       onClick={() => addSkill(skill)}
-                       disabled={data.skills.includes(skill)}
-                       className={`
-                         flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition-all duration-200
-                         ${data.skills.includes(skill) 
-                           ? 'bg-green-50 border-green-200 text-green-700 opacity-50 cursor-default scale-95' 
-                           : 'bg-white border-slate-200 text-slate-700 hover:border-teal-500 hover:text-teal-700 shadow-sm hover:scale-105'}
-                       `}
-                     >
-                       {skill}
-                       {!data.skills.includes(skill) && <Icons.Add size={12} />}
-                     </button>
-                   ))}
-                 </div>
-               </div>
-             )}
-          </div>
-        )}
-      </div>
-      
-      {/* Current Skills Chips */}
       <div className="flex flex-wrap gap-2 mt-4">
         {data.skills.map((skill, i) => skill.trim() && (
-          <span key={i} className="flex items-center gap-1 pl-3 pr-2 py-1 bg-teal-50 text-teal-700 rounded-full text-sm border border-teal-100 group animate-in zoom-in duration-200">
+          <span key={i} className="flex items-center gap-1 pl-3 pr-2 py-1 bg-teal-50 text-teal-700 rounded-full text-sm border border-teal-100 animate-in zoom-in">
             {skill.trim()}
             <button 
               onClick={() => {
@@ -451,7 +561,23 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
 
        <div className="space-y-4">
         {data.projects.map((item, index) => (
-          <div key={item.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative animate-in fade-in zoom-in-95 duration-300">
+          <div 
+            key={item.id} 
+            draggable
+            onDragStart={(e) => handleDragStart(e, index, 'projects')}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, index, 'projects', 'projects')}
+            className={`
+              bg-white p-5 pl-12 rounded-xl border transition-all relative animate-in fade-in zoom-in-95
+              ${draggedItem?.type === 'projects' && draggedItem.index === index 
+                ? 'opacity-40 border-dashed border-teal-500' 
+                : 'border-slate-200 shadow-sm'}
+            `}
+          >
+             <div className="absolute left-3 top-5 text-slate-300 hover:text-teal-600 cursor-grab active:cursor-grabbing drag-handle p-1">
+                <Icons.DragHandle size={24} />
+             </div>
+
              <button
               onClick={() => {
                 const newPrj = [...data.projects];
@@ -465,7 +591,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
             <div className="mb-4">
               <input
                 placeholder="Project Name"
-                className="w-full p-2 border-b border-slate-200 focus:border-teal-500 outline-none font-medium text-lg transition-colors"
+                className="w-full p-2 border-b border-slate-200 focus:border-teal-500 outline-none font-medium text-lg"
                 value={item.name}
                 onChange={(e) => {
                   const newPrj = [...data.projects];
@@ -477,7 +603,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
              <div className="relative">
               <textarea
                 placeholder="What did you build? What tech did you use?"
-                className="w-full p-3 bg-slate-50 rounded border-none focus:ring-1 focus:ring-teal-500 text-sm h-24 resize-none transition-all"
+                className="w-full p-3 bg-slate-50 rounded border-none focus:ring-1 focus:ring-teal-500 text-sm h-24 resize-none"
                 value={item.description}
                 onChange={(e) => {
                   const newPrj = [...data.projects];
@@ -497,7 +623,6 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
                   )}
                   disabled={loadingAI}
                   className="absolute bottom-2 right-2 flex items-center gap-1.5 p-1.5 bg-white shadow-sm border border-slate-200 rounded text-xs font-medium text-slate-600 hover:text-purple-600 transition-colors"
-                  title="AI Enhance"
                 >
                   <Icons.AI size={14} /> AI Rewrite
                 </button>
@@ -509,14 +634,18 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
   );
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 md:p-8">
-      <div key={section} className="animate-in fade-in slide-in-from-bottom-8 duration-500 ease-out fill-mode-both">
+    <div className="w-full max-w-3xl mx-auto p-4 md:p-8">
+      {/* Top ATS Widget */}
+      {renderATSWidget()}
+
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         {section === 'personal' && renderPersonalInfo()}
         {section === 'summary' && renderSummary()}
         {section === 'experience' && renderExperience()}
         {section === 'education' && renderEducation()}
         {section === 'skills' && renderSkills()}
         {section === 'projects' && renderProjects()}
+        {section === 'jobMatch' && renderJobMatch()}
       </div>
     </div>
   );

@@ -14,7 +14,11 @@ import {
   Plus,
   Trash2,
   ExternalLink,
-  Target
+  Target,
+  GripVertical,
+  BarChart,
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 
 export const Icons = {
@@ -33,5 +37,9 @@ export const Icons = {
   Add: Plus,
   Delete: Trash2,
   Link: ExternalLink,
-  Target
+  Target,
+  DragHandle: GripVertical,
+  Chart: BarChart,
+  ArrowRight,
+  Zap
 };

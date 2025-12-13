@@ -40,9 +40,20 @@ export interface ResumeData {
   projects: ProjectItem[];
 }
 
-export type SectionType = 'personal' | 'summary' | 'experience' | 'education' | 'skills' | 'projects';
+export type SectionType = 'personal' | 'summary' | 'experience' | 'education' | 'skills' | 'projects' | 'jobMatch';
 
 export interface PaymentState {
   isVerified: boolean;
   referenceNumber: string;
+}
+
+export interface ATSAnalysis {
+  score: number;
+  tips: string[];
+}
+
+export interface JobMatchAnalysis {
+  matchPercentage: number;
+  missingKeywords: string[];
+  advice: string;
 }

@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import Editor from './components/Editor';
 import Preview from './components/Preview';
 import InstaPayModal from './components/InstaPayModal';
+import LandingPage from './components/LandingPage';
 import { Icons } from './components/Icons';
 
 const initialData: ResumeData = {
@@ -23,6 +24,7 @@ const initialData: ResumeData = {
 };
 
 function App() {
+  const [view, setView] = useState<'landing' | 'app'>('landing');
   const [resumeData, setResumeData] = useState<ResumeData>(initialData);
   const [activeSection, setActiveSection] = useState<SectionType>('personal');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -36,7 +38,6 @@ function App() {
     if (!isVerified) {
       setIsPaymentModalOpen(true);
     } else {
-      // Trigger print dialog as a robust PDF generation method
       window.print();
     }
   };
@@ -44,6 +45,10 @@ function App() {
   const handleVerifyPayment = () => {
     setIsVerified(true);
   };
+
+  if (view === 'landing') {
+    return <LandingPage onStart={() => setView('app')} />;
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
@@ -83,13 +88,14 @@ function App() {
           </div>
         </div>
 
-        {/* Workspace Grid */}
+        {/* Workspace Grid - 3 Column Layout logic (Sidebar | Editor | Preview) */}
         <div className="flex-1 flex overflow-hidden">
           
           {/* Editor Column - Center */}
           <div className={`
-            flex-1 overflow-y-auto bg-slate-50 
+            flex-1 overflow-y-auto bg-slate-100/50 
             ${mobileViewMode === 'preview' ? 'hidden lg:block' : 'block'}
+            lg:border-r lg:border-slate-200
           `}>
             <Editor 
               section={activeSection} 
@@ -98,9 +104,9 @@ function App() {
             />
           </div>
 
-          {/* Preview Column - Right */}
+          {/* Preview Column - Right (Hidden on mobile unless toggled) */}
           <div className={`
-             lg:w-[45%] xl:w-[40%] bg-slate-200/50 border-l border-slate-200 overflow-y-auto overflow-x-hidden flex justify-center p-4 lg:p-8
+             lg:w-[45%] xl:w-[42%] bg-slate-200/50 overflow-y-auto overflow-x-hidden flex justify-center p-4 lg:p-8
              ${mobileViewMode === 'edit' ? 'hidden lg:flex' : 'flex w-full'}
           `}>
              <Preview data={resumeData} isMobile={mobileViewMode === 'preview' && window.innerWidth < 1024} />

@@ -18,6 +18,7 @@ const menuItems: { id: SectionType; label: string; icon: any }[] = [
   { id: 'education', label: 'Education', icon: Icons.Education },
   { id: 'skills', label: 'Skills', icon: Icons.Skills },
   { id: 'projects', label: 'Projects', icon: Icons.Projects },
+  { id: 'jobMatch', label: 'Job Match Analysis', icon: Icons.Target },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -41,12 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar Container */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-40
-        w-64 bg-white border-r border-slate-200 shadow-xl lg:shadow-none
+        w-72 bg-white border-r border-slate-200 shadow-xl lg:shadow-none
         transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col h-full
       `}>
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between lg:justify-start">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2 text-teal-700">
             <div className="bg-teal-600 text-white p-1 rounded">
               <span className="font-bold text-xl leading-none">#</span>
@@ -58,7 +59,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
           {menuItems.map((item) => (
             <button
               key={item.id}

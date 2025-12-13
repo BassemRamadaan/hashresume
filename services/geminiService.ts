@@ -1,6 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
+import { ResumeData, ATSAnalysis, JobMatchAnalysis } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+const model = 'gemini-2.5-flash';
 
 export const generateResumeContent = async (
   section: string,
@@ -18,15 +21,15 @@ export const generateResumeContent = async (
       
       Guidelines:
       1. Use strong action verbs (e.g., Spearheaded, Developed, Optimized, Engineered).
-      2. Focus on achievements and quantifiable results (numbers, percentages, efficiency gains) where possible.
-      3. Keep the tone professional, concise, and impactful. Avoid fluff.
+      2. Focus on achievements and quantifiable results.
+      3. Keep the tone professional, concise, and impactful.
       4. For "Experience", provide 3-4 bullet points.
-      5. For "Summary", provide a powerful, career-focused 3-sentence summary.
-      6. Return ONLY the suggested text. No markdown formatting, no intro/outro.
+      5. For "Summary", provide a powerful 3-sentence summary.
+      6. Return ONLY the suggested text.
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: model,
       contents: prompt,
     });
 
@@ -37,36 +40,67 @@ export const generateResumeContent = async (
   }
 };
 
-export const analyzeJobDescription = async (jobDescription: string): Promise<string[]> => {
+export const analyzeATSScore = async (data: ResumeData): Promise<ATSAnalysis> => {
   try {
     const prompt = `
-      You are a career coach and ATS specialist.
+      Analyze this resume JSON data for ATS compatibility and overall quality.
+      Resume Data: ${JSON.stringify(data)}
       
-      Task: Extract the most important technical and soft skills from the following job description.
-      
-      Job Description:
-      "${jobDescription}"
-      
-      Output Rules:
-      1. Return ONLY a comma-separated list of skills.
-      2. Do not include labels like "Technical Skills:" or "Soft Skills:".
-      3. Prioritize skills that are keywords likely to be scanned by an ATS.
-      4. Limit to the top 15 most relevant skills.
+      Return a JSON object with this exact structure (no markdown):
+      {
+        "score": number (0-100),
+        "tips": ["string", "string", "string"] (3 critical, short improvements)
+      }
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: model,
       contents: prompt,
+      config: { responseMimeType: 'application/json' }
     });
 
-    const text = response.text?.trim() || "";
-    if (!text) return [];
-    
-    // Split by comma and cleanup
-    return text.split(',').map(s => s.trim()).filter(s => s.length > 0);
-
+    const text = response.text || "{}";
+    return JSON.parse(text) as ATSAnalysis;
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return [];
+    console.error("ATS Score Error", error);
+    return { score: 0, tips: ["Could not analyze resume."] };
   }
+};
+
+export const calculateJobMatch = async (resumeData: ResumeData, jobDescription: string): Promise<JobMatchAnalysis> => {
+  try {
+    const prompt = `
+      Compare this resume against the job description.
+      Resume: ${JSON.stringify(resumeData)}
+      Job Description: "${jobDescription.substring(0, 2000)}"
+      
+      Return a JSON object with this exact structure (no markdown):
+      {
+        "matchPercentage": number (0-100),
+        "missingKeywords": ["string", "string", "string"],
+        "advice": "Short summary of how to improve match"
+      }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+     const text = response.text || "{}";
+    return JSON.parse(text) as JobMatchAnalysis;
+  } catch (error) {
+    console.error("Job Match Error", error);
+    return { matchPercentage: 0, missingKeywords: [], advice: "Analysis failed." };
+  }
+};
+
+export const analyzeJobDescription = async (jobDescription: string): Promise<string[]> => {
+  // Legacy function kept for backward compatibility if needed, but we prefer calculateJobMatch
+  try {
+    const prompt = `Extract top 15 technical skills from this JD as a comma-separated list: ${jobDescription.substring(0, 1000)}`;
+    const response = await ai.models.generateContent({ model: model, contents: prompt });
+    return response.text?.split(',').map(s => s.trim()) || [];
+  } catch (e) { return []; }
 };
