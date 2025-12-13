@@ -33,6 +33,14 @@ const egyptianUniversities = [
   "Minia University", "Suez Canal University", "Tanta University"
 ];
 
+const commonTechs = [
+  "React", "Angular", "Vue.js", "Node.js", "Python", "Java", "C++", "C#", 
+  "JavaScript", "TypeScript", "HTML5", "CSS3", "SQL", "MongoDB", "PostgreSQL",
+  "AWS", "Azure", "Google Cloud", "Docker", "Kubernetes", "Git", "Rest API", 
+  "GraphQL", "Next.js", "Tailwind CSS", "Bootstrap", "Sass", "Redux", "Express",
+  "Flutter", "Dart", "Swift", "Kotlin", "Firebase", "Supabase", "Prisma"
+];
+
 const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
   const [loadingAI, setLoadingAI] = useState(false);
   
@@ -703,6 +711,61 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
                 }}
               />
             </div>
+
+            {/* Technologies Input with Tags */}
+            <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Technologies</label>
+                <div className="flex flex-wrap gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus-within:ring-2 focus-within:ring-teal-500 focus-within:bg-white transition-all">
+                  {(item.technologies || []).map((tech, techIndex) => (
+                    <span key={techIndex} className="flex items-center gap-1 pl-2.5 pr-1 py-1 bg-white border border-slate-200 text-teal-700 rounded-md text-xs font-bold shadow-sm animate-in zoom-in duration-200">
+                      {tech}
+                      <button
+                        onClick={() => {
+                           const newPrj = [...data.projects];
+                           const currentTechs = item.technologies || [];
+                           newPrj[index].technologies = currentTechs.filter((_, i) => i !== techIndex);
+                           onChange({ ...data, projects: newPrj });
+                        }}
+                        className="hover:bg-slate-100 text-slate-400 hover:text-red-500 p-0.5 rounded-full transition-colors"
+                      >
+                        <Icons.Close size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    list={`tech-suggestions-${item.id}`}
+                    className="flex-1 min-w-[150px] bg-transparent outline-none text-sm p-1 placeholder:text-slate-400"
+                    placeholder="Add tech (e.g. React) + Enter"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const val = e.currentTarget.value.trim();
+                        if (val) {
+                           const newPrj = [...data.projects];
+                           const currentTechs = item.technologies || [];
+                           if (!currentTechs.includes(val)) {
+                             newPrj[index].technologies = [...currentTechs, val];
+                             onChange({ ...data, projects: newPrj });
+                           }
+                           e.currentTarget.value = '';
+                        }
+                      } else if (e.key === 'Backspace' && e.currentTarget.value === '') {
+                           const currentTechs = item.technologies || [];
+                           if (currentTechs.length > 0) {
+                             const newPrj = [...data.projects];
+                             newPrj[index].technologies = currentTechs.slice(0, -1);
+                             onChange({ ...data, projects: newPrj });
+                           }
+                      }
+                    }}
+                  />
+                  <datalist id={`tech-suggestions-${item.id}`}>
+                    {commonTechs.map(t => <option key={t} value={t} />)}
+                  </datalist>
+                </div>
+            </div>
+
              <div className="relative">
               <textarea
                 placeholder="What did you build? What tech did you use?"

@@ -126,6 +126,17 @@ const Preview: React.FC<PreviewProps> = ({ data, isMobile }) => {
                 {data.projects.map(proj => (
                   <div key={proj.id}>
                     <h4 className="font-bold text-slate-800 mb-1">{proj.name}</h4>
+                    
+                    {proj.technologies && proj.technologies.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {proj.technologies.map((tech, i) => (
+                           <span key={i} className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100 uppercase tracking-tight">
+                             {tech}
+                           </span>
+                        ))}
+                      </div>
+                    )}
+
                     <p className="text-sm text-slate-600 leading-relaxed">
                       {proj.description}
                     </p>
