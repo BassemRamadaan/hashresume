@@ -153,8 +153,8 @@ const InstaPayModal: React.FC<InstaPayModalProps> = ({ isOpen, onClose, onVerify
             >
                 {isVerifying ? (
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                    <span>Verifying...</span>
+                    <div className="w-5 h-5 border-2 border-slate-400 border-t-slate-600 rounded-full animate-spin"></div>
+                    <span>Processing Payment...</span>
                 </div>
                 ) : (
                 <>

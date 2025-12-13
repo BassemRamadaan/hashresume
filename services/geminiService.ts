@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { ResumeData, ATSAnalysis, JobMatchAnalysis } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -45,18 +45,25 @@ export const analyzeATSScore = async (data: ResumeData): Promise<ATSAnalysis> =>
     const prompt = `
       Analyze this resume JSON data for ATS compatibility and overall quality.
       Resume Data: ${JSON.stringify(data)}
-      
-      Return a JSON object with this exact structure (no markdown):
-      {
-        "score": number (0-100),
-        "tips": ["string", "string", "string"] (3 critical, short improvements)
-      }
     `;
 
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
-      config: { responseMimeType: 'application/json' }
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.INTEGER, description: "Score from 0 to 100" },
+            tips: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "3 critical, short improvements"
+            }
+          }
+        }
+      }
     });
 
     const text = response.text || "{}";
@@ -73,19 +80,25 @@ export const calculateJobMatch = async (resumeData: ResumeData, jobDescription: 
       Compare this resume against the job description.
       Resume: ${JSON.stringify(resumeData)}
       Job Description: "${jobDescription.substring(0, 2000)}"
-      
-      Return a JSON object with this exact structure (no markdown):
-      {
-        "matchPercentage": number (0-100),
-        "missingKeywords": ["string", "string", "string"],
-        "advice": "Short summary of how to improve match"
-      }
     `;
 
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
-      config: { responseMimeType: 'application/json' }
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            matchPercentage: { type: Type.INTEGER },
+            missingKeywords: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            advice: { type: Type.STRING }
+          }
+        }
+      }
     });
 
      const text = response.text || "{}";
@@ -99,8 +112,18 @@ export const calculateJobMatch = async (resumeData: ResumeData, jobDescription: 
 export const analyzeJobDescription = async (jobDescription: string): Promise<string[]> => {
   // Legacy function kept for backward compatibility if needed, but we prefer calculateJobMatch
   try {
-    const prompt = `Extract top 15 technical skills from this JD as a comma-separated list: ${jobDescription.substring(0, 1000)}`;
-    const response = await ai.models.generateContent({ model: model, contents: prompt });
-    return response.text?.split(',').map(s => s.trim()) || [];
+    const prompt = `Extract top 15 technical skills from this JD as a list: ${jobDescription.substring(0, 1000)}`;
+    const response = await ai.models.generateContent({ 
+      model: model, 
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        }
+      }
+    });
+    return JSON.parse(response.text || "[]");
   } catch (e) { return []; }
 };

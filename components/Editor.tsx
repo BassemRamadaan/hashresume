@@ -90,7 +90,7 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
   // --- Render Functions ---
 
   const renderATSWidget = () => (
-    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 text-white mb-6 shadow-lg">
+    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 text-white mb-6 shadow-lg border border-slate-700/50">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold flex items-center gap-2">
           <Icons.Chart className="text-teal-400" size={20} /> ATS Score
@@ -108,15 +108,21 @@ const Editor: React.FC<EditorProps> = ({ section, data, onChange }) => {
       {atsAnalysis ? (
         <div className="animate-in fade-in slide-in-from-top-2">
           <div className="flex items-end gap-2 mb-3">
-            <span className={`text-4xl font-bold ${atsAnalysis.score >= 80 ? 'text-green-400' : atsAnalysis.score >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
+            <span className={`text-5xl font-extrabold tracking-tight ${
+              atsAnalysis.score >= 80 
+                ? 'text-green-500 drop-shadow-sm' 
+                : atsAnalysis.score >= 60 
+                  ? 'text-yellow-400' 
+                  : 'text-red-500'
+            }`}>
               {atsAnalysis.score}
             </span>
-            <span className="text-slate-400 text-sm mb-1">/ 100</span>
+            <span className="text-slate-400 text-sm mb-1.5 font-medium">/ 100</span>
           </div>
           <div className="space-y-2">
              {atsAnalysis.tips.map((tip, i) => (
                <div key={i} className="flex gap-2 text-xs md:text-sm text-slate-300">
-                 <Icons.Check size={14} className="mt-0.5 shrink-0 text-teal-500" />
+                 <Icons.Check size={14} className={`mt-0.5 shrink-0 ${atsAnalysis.score >= 80 ? 'text-green-500' : 'text-teal-500'}`} />
                  {tip}
                </div>
              ))}
